@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "data-analysis-jupyter": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "data-analysis-jupyter/SKILL.md",
+      "computedHash": "b287cbbb3eb8fa54e93571dc2eea56c07cdcd8d1f85be16954e612c92cc76ac0"
+    },
+    "verification-before-completion": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/verification-before-completion/SKILL.md",
+      "computedHash": "b529822bdac4b197b180fe12225cff86b930b65910435103c10622df7f041651"
+    }
+  }
+}
