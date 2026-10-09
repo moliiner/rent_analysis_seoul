@@ -55,3 +55,17 @@ Portfolio project: exploratory data analysis of Jeonse and Monthly rent (Wolse) 
 - `data-analysis-jupyter`: notebook conventions (data quality checks, documented assumptions, reproducibility).
 - `verification-before-completion`: run it before reporting that work is finished.
 - If a skill convention conflicts with an explicit instruction from the user, the user's instruction wins.
+
+## Modeling protocol
+1. Two tracks: `jeonse` (target `deposit_10k_krw`) and `wolse` (target `monthly_rent_10k_krw`). Models are trained per track. Annual cash cost for Wolse = 12 x monthly rent. Deposit is NOT a feature in the wolse track.
+2. Target is `y = log1p(target)`; predictions are back-transformed with `expm1`.
+3. Strict temporal split by `contract_date`: TRAIN 2022-01-01..2024-12-31, TEST 2025. Never a random split. Everything (imputation, encoding, scaling, clustering, hyperparameters) is fit on TRAIN only.
+4. Tuning: 3-fold expanding-window time CV inside TRAIN only. Final projection refits on 2022-2025.
+5. Forbidden features: `lease_type` within a track, the other track's target, deposit in the wolse track, `monthly_rent` and every `previous_*` column, `contract_period`/`contract_start`/`contract_end`, `registration_year`, raw `contract_date`, `legal_dong_code`, lot-number columns, zone columns, `row_id`.
+6. Allowed features: `district_name`, `building_type`, `contract_type`, `renewal_right_used`, `log_area`, `floor`, `floor_missing`, `building_age` = max(contract_year - year_built, 0), `month_of_year` (sin/cos for linear models), `t` = months since 2022-01 (only in "time" variants), optional `legal_dong` (combined with `district_name`) for models that handle high cardinality.
+7. Primary metric WAPE; also MAE, MdAPE, median bias %, aggregate bias %, MAPE by district x quarter, RMSE and R2 on log scale.
+8. Model selection: lowest WAPE on TEST, one-standard-error rule with paired bootstrap, ties go to the simpler and less biased model. A projection model must be able to extrapolate a trend.
+9. Projections for 2026-2028 are extrapolation scenarios (only 48 months of data) and must be labelled as such.
+10. Every model notebook ends by saving predictions and metrics under `reports/` (`reports/predictions/{track}__{model_id}.parquet`, `reports/metrics/{track}__{model_id}.json`), never by overwriting another model's files.
+
+Code lives in `src/rent_model/` (`config`, `data`, `features`, `splits`, `metrics`, `io`); `RANDOM_SEED = 42` is defined only in `config.py`. Run the tests with `pytest -q`.
