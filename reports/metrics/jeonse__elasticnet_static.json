@@ -1,0 +1,32 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "elasticnet_static",
+    "run_at": "2026-10-10T09:26:11+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 24.367763144323444,
+    "mae": 10982.745386567645,
+    "mdape_pct": 18.626519212974205,
+    "median_bias_pct": -9.20488700158281,
+    "aggregate_bias_pct": -12.75638438960206,
+    "rmse_log": 0.35369248369170175,
+    "r2_log": 0.7807892291773306,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 26.18922179512971,
+    "mape_dq_max_pct": 47.6385038474841,
+    "meta": {
+      "family": "elasticnet",
+      "time_variant": false,
+      "rich": false,
+      "params": {
+        "alpha": 1e-05,
+        "l1_ratio": 0.2
+      },
+      "cv_wape_mean": 23.083274377381468,
+      "n_design_columns": 38,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]

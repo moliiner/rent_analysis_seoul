@@ -1,0 +1,31 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "ridge_time",
+    "run_at": "2026-10-10T09:26:14+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 51.34706174678128,
+    "mae": 38.492005323349474,
+    "mdape_pct": 40.87815443739889,
+    "median_bias_pct": -22.753400796805597,
+    "aggregate_bias_pct": -30.86064982739611,
+    "rmse_log": 0.7496584066566412,
+    "r2_log": 0.23719917016668224,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 81.58919903741129,
+    "mape_dq_max_pct": 137.48148583608787,
+    "meta": {
+      "family": "ridge",
+      "time_variant": true,
+      "rich": false,
+      "params": {
+        "alpha": 0.01
+      },
+      "cv_wape_mean": 48.16030674204948,
+      "n_design_columns": 41,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]

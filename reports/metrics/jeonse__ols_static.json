@@ -1,0 +1,29 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "ols_static",
+    "run_at": "2026-10-10T09:26:10+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 24.36636347448043,
+    "mae": 10982.114544195285,
+    "mdape_pct": 18.625495963173012,
+    "median_bias_pct": -9.205147688716034,
+    "aggregate_bias_pct": -12.754031422517857,
+    "rmse_log": 0.35368609663229705,
+    "r2_log": 0.7807971462218717,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 26.18861769345527,
+    "mape_dq_max_pct": 47.64036033335807,
+    "meta": {
+      "family": "ols",
+      "time_variant": false,
+      "rich": false,
+      "params": {},
+      "cv_wape_mean": null,
+      "n_design_columns": 38,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]

@@ -1,0 +1,31 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "lasso_time",
+    "run_at": "2026-10-10T09:26:11+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 24.047735864477755,
+    "mae": 10838.50653663776,
+    "mdape_pct": 18.30474304519072,
+    "median_bias_pct": -8.38736414827914,
+    "aggregate_bias_pct": -11.923941128002939,
+    "rmse_log": 0.3520480685983598,
+    "r2_log": 0.7828228348985731,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 26.138473957865887,
+    "mape_dq_max_pct": 48.43038475055099,
+    "meta": {
+      "family": "lasso",
+      "time_variant": true,
+      "rich": false,
+      "params": {
+        "alpha": 1e-05
+      },
+      "cv_wape_mean": 23.844064259031565,
+      "n_design_columns": 41,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]

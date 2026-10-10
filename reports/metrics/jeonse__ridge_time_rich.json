@@ -1,0 +1,31 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "ridge_time_rich",
+    "run_at": "2026-10-10T09:26:12+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 23.094440641902793,
+    "mae": 10408.848769293156,
+    "mdape_pct": 17.930762449601676,
+    "median_bias_pct": -8.259504412479387,
+    "aggregate_bias_pct": -10.612843806695468,
+    "rmse_log": 0.3427744921273439,
+    "r2_log": 0.7941138086228461,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 25.557795727055826,
+    "mape_dq_max_pct": 50.27152179598754,
+    "meta": {
+      "family": "ridge",
+      "time_variant": true,
+      "rich": true,
+      "params": {
+        "alpha": 1.0
+      },
+      "cv_wape_mean": 23.007446622643972,
+      "n_design_columns": 145,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]
