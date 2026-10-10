@@ -1,0 +1,43 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "kmeans_median",
+    "run_at": "2026-10-10T11:36:26+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 41.761931151144374,
+    "mae": 18822.435771714776,
+    "mdape_pct": 32.926829268292686,
+    "median_bias_pct": -8.333333333333332,
+    "aggregate_bias_pct": -20.47448674156153,
+    "rmse_log": 0.5749807995413762,
+    "r2_log": 0.4206821468170945,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 48.88207875302264,
+    "mape_dq_max_pct": 107.9049825134092,
+    "meta": {
+      "k": 4,
+      "k_selection": {
+        "silhouette": 0.3502410645984222,
+        "stability_ari": 0.9940027803105246,
+        "inertia": 247017.26905547632,
+        "rule": "max silhouette among stable (ARI >= 0.80) k >= 4"
+      },
+      "cluster_names": {
+        "0": "C0 Detached house, small, older",
+        "1": "C1 Apartment, large, older",
+        "2": "C2 Apartment, large, newer",
+        "3": "C3 Row house/Villa, small, newer"
+      },
+      "descriptors": [
+        "log_area",
+        "floor",
+        "floor_missing",
+        "building_age",
+        "building_type"
+      ],
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]

@@ -1,0 +1,52 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "hgb_time_kmeans",
+    "run_at": "2026-10-10T11:36:26+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 45.78552628913742,
+    "mae": 34.322834875051264,
+    "mdape_pct": 37.46423071035348,
+    "median_bias_pct": -18.346106870992408,
+    "aggregate_bias_pct": -22.568208181736633,
+    "rmse_log": 0.6973078308407786,
+    "r2_log": 0.34001599464127163,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 76.13750657676776,
+    "mape_dq_max_pct": 125.34211836738386,
+    "meta": {
+      "k": 4,
+      "k_selection": {
+        "silhouette": 0.3492988731154477,
+        "stability_ari": 0.8411280913688964,
+        "inertia": 303581.05396458687,
+        "rule": "max silhouette among stable (ARI >= 0.80) k >= 4"
+      },
+      "cluster_names": {
+        "0": "C0 Apartment, large, older",
+        "1": "C1 Row house/Villa, small, newer",
+        "2": "C2 Apartment, large, newer",
+        "3": "C3 Detached house, small, older"
+      },
+      "descriptors": [
+        "log_area",
+        "floor",
+        "floor_missing",
+        "building_age",
+        "building_type"
+      ],
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "base_model": "hgb_time",
+      "params": {
+        "learning_rate": 0.05,
+        "max_iter": 600,
+        "max_leaf_nodes": 15,
+        "min_samples_leaf": 50,
+        "l2_regularization": 10.0
+      },
+      "iterations_after_early_stopping": 599
+    }
+  }
+]
