@@ -1,0 +1,63 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "hgb_legal_dong",
+    "run_at": "2026-10-10T11:20:51+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 44.33351248863339,
+    "mae": 33.23434176488646,
+    "mdape_pct": 35.33397247388258,
+    "median_bias_pct": -16.90856797558727,
+    "aggregate_bias_pct": -21.667266306478833,
+    "rmse_log": 0.683693037167698,
+    "r2_log": 0.3655365041972316,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 75.03689605042905,
+    "mape_dq_max_pct": 127.19041840717689,
+    "meta": {
+      "variant": "legal_dong",
+      "params": {
+        "learning_rate": 0.03,
+        "max_iter": 1000,
+        "max_leaf_nodes": 31,
+        "min_samples_leaf": 50,
+        "l2_regularization": 10.0
+      },
+      "iterations_after_early_stopping": 1000,
+      "cv_wape_mean": 42.246623794354015,
+      "tuning_rows": 60000,
+      "features": [
+        "district_name",
+        "building_type",
+        "contract_type",
+        "renewal_right_used",
+        "log_area",
+        "floor",
+        "floor_missing",
+        "building_age",
+        "legal_dong"
+      ],
+      "early_stopping_tail_months": 6,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "interval": {
+        "method": "HistGradientBoosting quantile loss, same hyperparameters",
+        "quantiles": [
+          0.1,
+          0.9
+        ],
+        "nominal_coverage": 0.8,
+        "coverage_test": 0.6493281917377095,
+        "mean_lower": 26.84075756821338,
+        "mean_upper": 105.33707331786879,
+        "median_lower": 25.511270411655566,
+        "median_upper": 77.65336823987602,
+        "row_level_bounds_columns": [
+          "lower_p10",
+          "upper_p90"
+        ]
+      }
+    }
+  }
+]
