@@ -85,3 +85,37 @@ def test_save_run_writes_predictions_and_appends_metrics(tmp_path):
 def test_save_run_rejects_bad_names(track, model_id, tmp_path):
     with pytest.raises(ValueError):
         save_run(track, model_id, Y, P, reports_dir=tmp_path)
+
+
+def month_driven_toy():
+    """Model A beats B in 7 months and loses in 5: the difference is a month-level effect."""
+    months = np.repeat(np.arange(12), 500)
+    y = np.full(months.size, 100.0)
+    return y, y + np.where(months < 7, 5.0, 7.0), y + 6.0, months
+
+
+def test_block_bootstrap_is_more_conservative_than_row_bootstrap():
+    y, pred_a, pred_b, months = month_driven_toy()
+    row = m.paired_bootstrap_wape_diff(y, pred_a, pred_b)
+    block = m.block_bootstrap_wape_diff(y, pred_a, pred_b, months)
+    assert row['diff'] == pytest.approx(block['diff']) and row['diff'] < 0
+    assert row['ci_high'] < 0                         # rows: "A is better"
+    assert block['ci_low'] < 0 < block['ci_high']     # months: a tie
+    assert block['se'] > 5 * row['se']
+
+
+def test_block_bootstrap_is_reproducible_and_matches_a_single_block_limit():
+    y, pred_a, pred_b, months = month_driven_toy()
+    a = m.block_bootstrap_wape_diff(y, pred_a, pred_b, months, n=200)
+    b = m.block_bootstrap_wape_diff(y, pred_a, pred_b, months, n=200)
+    assert a == b
+    same = m.block_bootstrap_wape_diff(y, pred_a, pred_a, months, n=100)
+    assert same['diff'] == 0.0 and same['se'] == 0.0
+
+
+def test_conservative_wape_diff_uses_the_largest_standard_error():
+    y, pred_a, pred_b, months = month_driven_toy()
+    districts = np.tile(np.arange(5), months.size // 5 + 1)[: months.size]
+    out = m.conservative_wape_diff(y, pred_a, pred_b, months, districts, n=300)
+    assert out['se'] == pytest.approx(max(out['se_row'], out['se_month'], out['se_district']))
+    assert out['source'] == 'month' and out['ci_low'] < 0 < out['ci_high']

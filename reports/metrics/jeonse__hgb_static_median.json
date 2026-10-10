@@ -1,0 +1,38 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "hgb_static_median",
+    "run_at": "2026-10-10T21:52:21+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 18.139653003021323,
+    "mae": 8175.686424434083,
+    "mdape_pct": 13.636130059377058,
+    "median_bias_pct": -6.4311332479430074,
+    "aggregate_bias_pct": -8.242617584230675,
+    "rmse_log": 0.2847873052153708,
+    "r2_log": 0.8578812169592522,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 20.647688804569043,
+    "mape_dq_max_pct": 44.210095725607076,
+    "meta": {
+      "loss": "HistGradientBoostingRegressor loss=quantile, quantile=0.5 on log1p(target)",
+      "base_model": "hgb_static",
+      "params": {
+        "learning_rate": 0.05,
+        "max_iter": 1000,
+        "max_leaf_nodes": 127,
+        "min_samples_leaf": 10,
+        "l2_regularization": 1.0
+      },
+      "hyperparameters": "saved for the base model (not re-tuned)",
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "behaviour": "level persistence",
+      "pseudo_test_wape": {
+        "2023": 19.163810918929496,
+        "2024": 18.431365348555023
+      }
+    }
+  }
+]

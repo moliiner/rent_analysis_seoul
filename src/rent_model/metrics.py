@@ -133,3 +133,48 @@ def paired_bootstrap_wape_diff(y, pred_a, pred_b, n=1000, seed=RANDOM_SEED):
         'ci_high': float(np.percentile(diffs, 97.5)),
         'prob_a_better': float((diffs < 0).mean()),
     }
+
+
+def block_bootstrap_wape_diff(y, pred_a, pred_b, blocks, n=1000, seed=RANDOM_SEED):
+    """Paired bootstrap of WAPE(a) - WAPE(b) that resamples whole blocks of rows.
+
+    `blocks` assigns every row to a block (for example its contract month or its district). Rows of
+    the same block are strongly correlated (shared market conditions, same buildings), so resampling
+    blocks gives a larger, more honest standard error than resampling rows. Returns the same keys
+    as `paired_bootstrap_wape_diff`.
+    """
+    y, pred_a = _arrays(y, pred_a)
+    _, pred_b = _arrays(y, pred_b)
+    codes, uniques = pd.factorize(np.asarray(blocks))
+    n_blocks = len(uniques)
+    sums = np.column_stack([np.bincount(codes, weights=w, minlength=n_blocks)
+                            for w in (np.abs(y - pred_a), np.abs(y - pred_b), np.abs(y))])
+    rng = np.random.default_rng(seed)
+    draws = rng.integers(0, n_blocks, size=(n, n_blocks))
+    total = sums[draws].sum(axis=1)
+    diffs = (total[:, 0] - total[:, 1]) / total[:, 2] * 100
+    return {
+        'diff': wape(y, pred_a) - wape(y, pred_b),
+        'se': float(diffs.std(ddof=1)),
+        'ci_low': float(np.percentile(diffs, 2.5)),
+        'ci_high': float(np.percentile(diffs, 97.5)),
+        'prob_a_better': float((diffs < 0).mean()),
+    }
+
+
+def conservative_wape_diff(y, pred_a, pred_b, months, districts, n=1000, seed=RANDOM_SEED):
+    """Paired WAPE difference with the most conservative of three standard errors.
+
+    The standard errors come from the row bootstrap, the month-block bootstrap and the
+    district-block bootstrap; the largest one is used (and its 95% interval is returned). Keys:
+    diff, se, source ('row', 'month' or 'district'), ci_low, ci_high, se_row, se_month, se_district.
+    """
+    results = {
+        'row': paired_bootstrap_wape_diff(y, pred_a, pred_b, n=n, seed=seed),
+        'month': block_bootstrap_wape_diff(y, pred_a, pred_b, months, n=n, seed=seed),
+        'district': block_bootstrap_wape_diff(y, pred_a, pred_b, districts, n=n, seed=seed),
+    }
+    source = max(results, key=lambda k: results[k]['se'])
+    return {'diff': results[source]['diff'], 'se': results[source]['se'], 'source': source,
+            'ci_low': results[source]['ci_low'], 'ci_high': results[source]['ci_high'],
+            **{f'se_{k}': v['se'] for k, v in results.items()}}

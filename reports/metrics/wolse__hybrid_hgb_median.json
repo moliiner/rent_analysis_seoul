@@ -1,0 +1,38 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "hybrid_hgb_median",
+    "run_at": "2026-10-10T21:52:22+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 43.05271398448488,
+    "mae": 32.27419913622061,
+    "mdape_pct": 29.82064851070081,
+    "median_bias_pct": -9.57795260957266,
+    "aggregate_bias_pct": -13.688150577806432,
+    "rmse_log": 0.7120480943713241,
+    "r2_log": 0.31181851709549346,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 88.25590509450876,
+    "mape_dq_max_pct": 161.80906782460343,
+    "meta": {
+      "loss": "HistGradientBoostingRegressor loss=quantile, quantile=0.5 on log1p(target)",
+      "base_model": "hybrid_hgb",
+      "params": {
+        "learning_rate": 0.03,
+        "max_iter": 300,
+        "max_leaf_nodes": 127,
+        "min_samples_leaf": 100,
+        "l2_regularization": 10.0
+      },
+      "hyperparameters": "saved for the base model (not re-tuned)",
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "behaviour": "extrapolates",
+      "pseudo_test_wape": {
+        "2023": 38.55612973809524,
+        "2024": 42.93028703686546
+      }
+    }
+  }
+]
