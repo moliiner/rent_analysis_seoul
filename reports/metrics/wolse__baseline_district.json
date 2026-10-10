@@ -1,0 +1,24 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "baseline_district",
+    "run_at": "2026-10-10T08:45:16+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 54.76366832252432,
+    "mae": 41.0532431824863,
+    "mdape_pct": 39.39393939393939,
+    "median_bias_pct": -7.6923076923076925,
+    "aggregate_bias_pct": -27.484299724459444,
+    "rmse_log": 0.8326601829625055,
+    "r2_log": 0.058934351037463806,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 95.6822296908096,
+    "mape_dq_max_pct": 178.70686239069775,
+    "meta": {
+      "fit_rows": 152714,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]

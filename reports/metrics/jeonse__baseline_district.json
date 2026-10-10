@@ -1,0 +1,24 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "baseline_district",
+    "run_at": "2026-10-10T08:45:15+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 51.692606860573385,
+    "mae": 23298.270594437854,
+    "mdape_pct": 46.496815286624205,
+    "median_bias_pct": -16.666666666666664,
+    "aggregate_bias_pct": -29.719990323675315,
+    "rmse_log": 0.7145400361963385,
+    "r2_log": 0.10532899436597043,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 63.597586476107395,
+    "mape_dq_max_pct": 113.75904575168032,
+    "meta": {
+      "fit_rows": 138848,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]
