@@ -1,0 +1,31 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "ridge_time_gmm",
+    "run_at": "2026-10-10T12:40:52+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 23.390770588825312,
+    "mae": 10542.407042089453,
+    "mdape_pct": 17.28885983156069,
+    "median_bias_pct": -7.399273367563135,
+    "aggregate_bias_pct": -11.343681044162643,
+    "rmse_log": 0.34222161132453255,
+    "r2_log": 0.7947774444736567,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 25.653152522882852,
+    "mape_dq_max_pct": 48.24316890977413,
+    "meta": {
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "gmm_components": 12,
+      "gmm_covariance_type": "full",
+      "gmm_reg_covar": 0.001,
+      "gmm_bic": -1726400.6010406034,
+      "gmm_aic": -1730642.130263789,
+      "selection": "minimum BIC over covariance types x k = 2..12",
+      "base_model": "ridge_time",
+      "alpha": 0.01
+    }
+  }
+]

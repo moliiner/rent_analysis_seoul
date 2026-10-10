@@ -1,0 +1,31 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "ridge_time_gmm",
+    "run_at": "2026-10-10T12:40:52+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 50.4504048289738,
+    "mae": 37.819832044503066,
+    "mdape_pct": 40.31803134667261,
+    "median_bias_pct": -22.06583615220148,
+    "aggregate_bias_pct": -29.91255491805509,
+    "rmse_log": 0.7422134964099143,
+    "r2_log": 0.2522747952011134,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 79.79442255495314,
+    "mape_dq_max_pct": 139.70906202328192,
+    "meta": {
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "gmm_components": 11,
+      "gmm_covariance_type": "full",
+      "gmm_reg_covar": 0.001,
+      "gmm_bic": -2014190.414493271,
+      "gmm_aic": -2018115.2617504378,
+      "selection": "minimum BIC over covariance types x k = 2..12",
+      "base_model": "ridge_time",
+      "alpha": 0.01
+    }
+  }
+]

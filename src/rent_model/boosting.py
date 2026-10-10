@@ -33,11 +33,12 @@ PARAM_DISTRIBUTIONS = {
 }
 
 
-def feature_columns(variant, extra_categorical=()):
+def feature_columns(variant, extra_categorical=(), extra_numeric=()):
     """Columns that are model features. `t` is a feature of the 'time' variant only.
 
-    `extra_categorical` appends caller-built categorical columns (for example a cluster label)."""
-    cols = list(config.CATEGORICAL_FEATURES) + list(extra_categorical) + NUMERIC
+    `extra_categorical` / `extra_numeric` append caller-built columns (for example a cluster label
+    or mixture probabilities)."""
+    cols = list(config.CATEGORICAL_FEATURES) + list(extra_categorical) + NUMERIC + list(extra_numeric)
     if variant == 'time':
         cols.append(TIME)
     if variant == 'legal_dong':
@@ -71,7 +72,7 @@ class RareGrouper(BaseEstimator, TransformerMixin):
         return np.where(values.isin(self.keep_), values, OTHER).reshape(-1, 1)
 
 
-def build_preprocessor(variant, min_frequency=30, extra_categorical=()):
+def build_preprocessor(variant, min_frequency=30, extra_categorical=(), extra_numeric=()):
     """Ordinal encoding of the categoricals (unknown -> NaN, i.e. 'missing' for the booster)."""
     def encoder():
         return OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=np.nan)
@@ -79,7 +80,7 @@ def build_preprocessor(variant, min_frequency=30, extra_categorical=()):
     parts = [('cat', encoder(), list(config.CATEGORICAL_FEATURES) + list(extra_categorical))]
     if variant == 'legal_dong':
         parts.append(('dong', Pipeline([('group', RareGrouper(min_frequency)), ('ord', encoder())]), [DONG]))
-    parts.append(('num', 'passthrough', NUMERIC + ([TIME] if variant == 'time' else [])))
+    parts.append(('num', 'passthrough', NUMERIC + list(extra_numeric) + ([TIME] if variant == 'time' else [])))
     return ColumnTransformer(parts, remainder='drop', verbose_feature_names_out=False)
 
 
@@ -101,7 +102,7 @@ class BoostedModel(RegressorMixin, BaseEstimator):
 
     def __init__(self, variant='static', learning_rate=0.1, max_iter=500, max_leaf_nodes=31,
                  min_samples_leaf=20, l2_regularization=0.0, quantile=None, tail_months=6,
-                 min_frequency=30, extra_categorical=()):
+                 min_frequency=30, extra_categorical=(), extra_numeric=()):
         self.variant = variant
         self.learning_rate = learning_rate
         self.max_iter = max_iter
@@ -112,6 +113,7 @@ class BoostedModel(RegressorMixin, BaseEstimator):
         self.tail_months = tail_months
         self.min_frequency = min_frequency
         self.extra_categorical = extra_categorical
+        self.extra_numeric = extra_numeric
 
     def _booster(self, max_iter, categorical):
         kwargs = dict(loss='squared_error') if self.quantile is None else dict(loss='quantile', quantile=self.quantile)
@@ -130,8 +132,8 @@ class BoostedModel(RegressorMixin, BaseEstimator):
         else:
             y_fit = y
 
-        self.pre_ = build_preprocessor(self.variant, self.min_frequency, self.extra_categorical)
-        A = self.pre_.fit_transform(X[feature_columns(self.variant, self.extra_categorical)])
+        self.pre_ = build_preprocessor(self.variant, self.min_frequency, self.extra_categorical, self.extra_numeric)
+        A = self.pre_.fit_transform(X[feature_columns(self.variant, self.extra_categorical, self.extra_numeric)])
         n_cat = (len(config.CATEGORICAL_FEATURES) + len(self.extra_categorical)
                  + (1 if self.variant == 'legal_dong' else 0))
         categorical = np.arange(A.shape[1]) < n_cat
@@ -147,7 +149,8 @@ class BoostedModel(RegressorMixin, BaseEstimator):
         return self
 
     def predict(self, X):
-        pred = self.model_.predict(self.pre_.transform(X[feature_columns(self.variant, self.extra_categorical)]))
+        pred = self.model_.predict(self.pre_.transform(
+            X[feature_columns(self.variant, self.extra_categorical, self.extra_numeric)]))
         if self.variant == 'detrended':
             pred = pred + self.intercept_ + self.slope_ * X[TIME].to_numpy(dtype=float)
         return pred

@@ -1,0 +1,29 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "gmm_median",
+    "run_at": "2026-10-10T12:40:52+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 51.87327210466158,
+    "mae": 38.886475643708174,
+    "mdape_pct": 35.8974358974359,
+    "median_bias_pct": -6.666666666666667,
+    "aggregate_bias_pct": -19.839565963071337,
+    "rmse_log": 0.8164456657948479,
+    "r2_log": 0.09522852183246278,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 99.21955178374276,
+    "mape_dq_max_pct": 191.3956466024582,
+    "meta": {
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "gmm_components": 11,
+      "gmm_covariance_type": "full",
+      "gmm_reg_covar": 0.001,
+      "gmm_bic": -2014190.414493271,
+      "gmm_aic": -2018115.2617504378,
+      "selection": "minimum BIC over covariance types x k = 2..12"
+    }
+  }
+]
