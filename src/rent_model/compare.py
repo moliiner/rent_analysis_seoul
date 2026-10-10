@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from . import config
-from .metrics import paired_bootstrap_wape_diff, wape
+from .metrics import conservative_wape_diff, paired_bootstrap_wape_diff, wape
 
 METRIC_COLUMNS = ['wape_pct', 'mae', 'mdape_pct', 'median_bias_pct', 'aggregate_bias_pct', 'mape_dq_median_pct',
                   'mape_dq_max_pct', 'rmse_log', 'r2_log']
@@ -51,8 +51,21 @@ def family_of(model_id):
     return 'linear'
 
 
+MEDIAN_VARIANT_BASES = ('hgb_static', 'hgb_time', 'hgb_detrended', 'hgb_legal_dong', 'hybrid_hgb')
+
+
+def _base_id(model_id):
+    """Model id without the `_oracle` suffix and without the `_median` suffix of a median-loss variant.
+
+    Only the boosting / hybrid models have median-loss variants; ids that natively end in `_median`
+    (`baseline_global_median`, `kmeans_median`, `gmm_median`...) are left untouched."""
+    model_id = model_id.removesuffix('_oracle')
+    stem = model_id.removesuffix('_median')
+    return stem if model_id.endswith('_median') and stem in MEDIAN_VARIANT_BASES else model_id
+
+
 def complexity_of(model_id):
-    base = model_id.removesuffix('_oracle')
+    base = _base_id(model_id)
     if base not in _COMPLEXITY:
         raise KeyError(f'no complexity level for {model_id}')
     return _COMPLEXITY[base]
@@ -67,7 +80,7 @@ def extrapolation_kind(model_id):
     - tree time feature: trees with `t` are flat beyond the last TRAIN month (cannot extrapolate)
     - none: no time information (static models, baselines, unsupervised medians)
     """
-    base = model_id.removesuffix('_oracle')
+    base = _base_id(model_id)
     if base.startswith('hybrid'):
         return 'forecasted index', True
     if base.endswith('_detrended'):
@@ -81,19 +94,46 @@ def extrapolation_kind(model_id):
     return 'none', False
 
 
+BEHAVIOUR_TOLERANCE = 1e-3   # relative change of the annual mean below which a path is "level persistence"
+BEHAVIOURS = ('extrapolates', 'level persistence', 'not evaluated')
+
+
+def classify_projection(path, tolerance=BEHAVIOUR_TOLERANCE):
+    """Behavioural extrapolation label of a projected path (Series indexed by month).
+
+    The annual means of the path are compared: if they all lie within `tolerance` (relative) of each
+    other the model only persists its last level ("level persistence", seasonal wiggles average out);
+    otherwise the path moves beyond the last level and the model "extrapolates".
+    """
+    annual = pd.Series(np.asarray(path, dtype=float), index=pd.DatetimeIndex(path.index)).groupby(lambda d: d.year).mean()
+    return 'extrapolates' if annual.max() / annual.min() - 1 > tolerance else 'level persistence'
+
+
+def load_behaviour(track, metrics_dir=None):
+    """{model_id: behaviour} saved by notebooks/10 (reports/metrics/pseudotest_{track}.json); empty if absent."""
+    metrics_dir = config.METRICS_DIR if metrics_dir is None else metrics_dir
+    path = metrics_dir / f'pseudotest_{track}.json'
+    if not path.exists():
+        return {}
+    candidates = json.loads(path.read_text(encoding='utf-8')).get('candidates', {})
+    return {model_id: info['behaviour'] for model_id, info in candidates.items()}
+
+
 def load_runs(metrics_dir=None):
     """Last saved run of every model and track (JSON files named {track}__{model_id}.json)."""
     metrics_dir = config.METRICS_DIR if metrics_dir is None else metrics_dir
-    rows = []
+    rows, behaviours = [], {}
     for path in sorted(metrics_dir.glob('*__*.json')):
         track, model_id = path.stem.split('__', 1)
         if track not in config.TRACKS:
             continue
         run = json.loads(path.read_text(encoding='utf-8'))[-1]
         kind, can = extrapolation_kind(model_id)
+        behaviour = behaviours.setdefault(track, load_behaviour(track, metrics_dir)).get(model_id, 'not evaluated')
         rows.append({'track': track, 'model_id': model_id, 'family': family_of(model_id),
                      'valid': bool(run.get('meta', {}).get('valid', True)), 'extrapolation': kind,
-                     'can_extrapolate': can, 'complexity': complexity_of(model_id), 'n': run['n'],
+                     'extrapolation_label_ok': can, 'behaviour': behaviour, 'can_extrapolate': behaviour == 'extrapolates',
+                     'complexity': complexity_of(model_id), 'n': run['n'],
                      **{c: run.get(c, np.nan) for c in METRIC_COLUMNS}})
     return pd.DataFrame(rows)
 
@@ -120,7 +160,7 @@ def family_table(valid_runs):
     return table.reset_index()
 
 
-def one_se_selection(y, predictions, runs_track, n_boot=1000, seed=config.RANDOM_SEED):
+def one_se_selection(y, predictions, runs_track, n_boot=1000, seed=config.RANDOM_SEED, months=None, districts=None):
     """Lowest-WAPE leader, paired bootstrap of every model against it and the one-SE tie set.
 
     `predictions` maps model_id -> predicted values (same rows as `y`); `runs_track` holds the
@@ -128,6 +168,10 @@ def one_se_selection(y, predictions, runs_track, n_boot=1000, seed=config.RANDOM
     with the leader when its WAPE difference to the leader is at most one bootstrap standard error of
     that difference. Among ties the winner has the lowest complexity, then the smallest absolute
     aggregate bias, then the lowest WAPE. Returns (table, leader, selected).
+
+    With `months` and `districts` (one label per row) the standard error is the most conservative of
+    the row, month-block and district-block bootstrap standard errors (CLAUDE.md rule 8); without
+    them only the row bootstrap is used. The column `se_source` tells which one was largest.
     """
     y = np.asarray(y, dtype=float)
     wapes = {m: wape(y, p) for m, p in predictions.items()}
@@ -135,11 +179,13 @@ def one_se_selection(y, predictions, runs_track, n_boot=1000, seed=config.RANDOM
     rows = []
     for model_id, pred in predictions.items():
         if model_id == leader:
-            boot = {'diff': 0.0, 'se': 0.0, 'ci_low': 0.0, 'ci_high': 0.0}
+            boot = {'diff': 0.0, 'se': 0.0, 'ci_low': 0.0, 'ci_high': 0.0, 'source': 'row'}
+        elif months is not None and districts is not None:
+            boot = conservative_wape_diff(y, pred, predictions[leader], months, districts, n=n_boot, seed=seed)
         else:
-            boot = paired_bootstrap_wape_diff(y, pred, predictions[leader], n=n_boot, seed=seed)
+            boot = {**paired_bootstrap_wape_diff(y, pred, predictions[leader], n=n_boot, seed=seed), 'source': 'row'}
         rows.append({'model_id': model_id, 'wape_pct': wapes[model_id], 'diff_vs_leader': boot['diff'],
-                     'se_diff': boot['se'], 'ci_low': boot['ci_low'], 'ci_high': boot['ci_high'],
+                     'se_diff': boot['se'], 'se_source': boot['source'], 'ci_low': boot['ci_low'], 'ci_high': boot['ci_high'],
                      'tie_with_leader': model_id == leader or boot['diff'] <= boot['se']})
     table = pd.DataFrame(rows).merge(runs_track[['model_id', 'complexity', 'aggregate_bias_pct']], on='model_id')
     table['abs_aggregate_bias'] = table['aggregate_bias_pct'].abs()
@@ -148,20 +194,34 @@ def one_se_selection(y, predictions, runs_track, n_boot=1000, seed=config.RANDOM
     return table, leader, str(ties.iloc[0]['model_id'])
 
 
-def bootstrap_best_share(y, predictions, n_boot=1000, seed=config.RANDOM_SEED):
+def bootstrap_best_share(y, predictions, n_boot=1000, seed=config.RANDOM_SEED, blocks=None):
     """Share of bootstrap resamples (the same rows for every model) in which each model has the
-    lowest WAPE. The shares sum to one (ties are split equally)."""
+    lowest WAPE. The shares sum to one (ties are split equally).
+
+    With `blocks` (one label per row, for example the contract month) whole blocks are resampled
+    instead of single rows, which gives a more honest picture when rows of a block are correlated."""
     y = np.asarray(y, dtype=float)
     names = list(predictions)
     abs_err = np.vstack([np.abs(y - np.asarray(predictions[m], dtype=float)) for m in names])
     abs_y = np.abs(y)
     rng = np.random.default_rng(seed)
     wins = np.zeros(len(names))
-    for _ in range(n_boot):
-        idx = rng.integers(0, len(y), len(y))
-        scores = abs_err[:, idx].sum(axis=1) / abs_y[idx].sum()
-        best = scores == scores.min()
-        wins[best] += 1.0 / best.sum()
+    if blocks is None:
+        for _ in range(n_boot):
+            idx = rng.integers(0, len(y), len(y))
+            scores = abs_err[:, idx].sum(axis=1) / abs_y[idx].sum()
+            best = scores == scores.min()
+            wins[best] += 1.0 / best.sum()
+    else:
+        codes, uniques = pd.factorize(np.asarray(blocks))
+        n_blocks = len(uniques)
+        err_sums = np.column_stack([np.bincount(codes, weights=abs_err[i], minlength=n_blocks) for i in range(len(names))])
+        y_sums = np.bincount(codes, weights=abs_y, minlength=n_blocks)
+        for _ in range(n_boot):
+            draw = rng.integers(0, n_blocks, n_blocks)
+            scores = err_sums[draw].sum(axis=0) / y_sums[draw].sum()
+            best = scores == scores.min()
+            wins[best] += 1.0 / best.sum()
     return pd.Series(wins / n_boot, index=names, name='share_best')
 
 

@@ -2,7 +2,7 @@
 
 1. Every number in the results tables and key-results lines of README.md must equal the value in
    reports/metrics/leaderboard.csv (formatted as in the README) or in reports/metrics/ts_index_*.json.
-2. Model notebooks 01..09 must use the temporal split (never a random split or a shuffle).
+2. Model notebooks 01..09 (10 is the selection notebook) must use the temporal split (never a random split or a shuffle).
 These tests are skipped, with a message, when the generated reports are missing.
 """
 import json
@@ -58,10 +58,10 @@ def test_leaderboard_csv_is_consistent(board):
 def test_readme_leaderboard_tables_match_csv(board, readme, track):
     valid = board[(board['track'] == track) & board['valid']].set_index('model_id')
     block = section(readme, TRACK_HEADINGS[track])
-    row = re.compile(r'^\| (\d+) \| `(\w+)` \| ([\w/\- ]+?) \| (-?\d+\.\d\d) \| (-?\d+\.\d\d) \| (-?\d+\.\d\d) \| (.+?) \| (.*?) \|$', re.M)
+    row = re.compile(r'^\| (\d+) \| `(\w+)` \| ([\w/\- ]+?) \| (-?\d+\.\d\d) \| (-?\d+\.\d\d) \| (-?\d+\.\d\d) \| (\d+\.\d\d|-) \| (.+?) \| (.*?) \|$', re.M)
     rows = row.findall(block)
     assert len(rows) >= 10, 'could not parse the README leaderboard table'
-    for rank, model, family, wape, median_bias, aggregate_bias, _, note in rows:
+    for rank, model, family, wape, median_bias, aggregate_bias, pseudo, _, note in rows:
         r = valid.loc[model]
         assert int(rank) == int(r['rank_valid']), f'{track} {model}: rank'
         assert family == r['family'], f'{track} {model}: family'
@@ -69,7 +69,11 @@ def test_readme_leaderboard_tables_match_csv(board, readme, track):
         assert median_bias == f2(r['median_bias_pct']), f'{track} {model}: median bias'
         assert aggregate_bias == f2(r['aggregate_bias_pct']), f'{track} {model}: aggregate bias'
         assert (note == 'chosen') == bool(r['is_chosen_model']), f'{track} {model}: chosen flag'
-        assert (note == 'best accuracy, cannot extrapolate') == bool(r['is_unconstrained_leader']), f'{track} {model}: leader flag'
+        assert (note == 'unconstrained choice') == bool(r['is_unconstrained_leader']), f'{track} {model}: unconstrained flag'
+        expected = '-' if pd.isna(r['pseudotest_wape_pooled']) else f2(r['pseudotest_wape_pooled'])
+        assert pseudo == expected, f'{track} {model}: pseudo-test WAPE {pseudo} vs {expected}'
+    shown = {m for _, m, *_ in rows}
+    assert set(valid.index[valid['is_chosen_model'] | valid['is_unconstrained_leader']]) <= shown, f'{track}: chosen and unconstrained models must be in the table'
 
 
 def test_readme_family_table_matches_csv(board, readme):
@@ -91,10 +95,10 @@ def test_readme_key_results_and_winner_match_csv(board, readme):
     chosen = valid[valid['is_chosen_model']].set_index('track')
     leader = valid[valid['is_unconstrained_leader']].set_index('track')
 
-    best = re.search(r'\*\*Best accuracy on 2025 \(held-out year\):\*\* `(\w+)` in both tracks, with a WAPE of (\d+\.\d\d)% for Jeonse and (\d+\.\d\d)% for Wolse', readme)
-    assert best, 'key-results line "Best accuracy" not found'
-    assert best.group(1) == leader.loc['jeonse', 'model_id'] == leader.loc['wolse', 'model_id']
-    assert (best.group(2), best.group(3)) == (f2(leader.loc['jeonse', 'wape_pct']), f2(leader.loc['wolse', 'wape_pct']))
+    best = re.search(r'\*\*Unconstrained choice\*\* \(.*?\): `(\w+)` for Jeonse \(2025 WAPE (\d+\.\d\d)%\) and `(\w+)` for Wolse \(2025 WAPE (\d+\.\d\d)%\)', readme)
+    assert best, 'key-results line "Unconstrained choice" not found'
+    assert (best.group(1), best.group(3)) == (leader.loc['jeonse', 'model_id'], leader.loc['wolse', 'model_id'])
+    assert (best.group(2), best.group(4)) == (f2(leader.loc['jeonse', 'wape_pct']), f2(leader.loc['wolse', 'wape_pct']))
 
     pick = re.search(r'`(\w+)` for Jeonse \(WAPE (\d+\.\d\d)%\) and `(\w+)` for Wolse \(WAPE (\d+\.\d\d)%\)\. Requiring extrapolation costs (\d+\.\d{4}) \(Jeonse\) and (\d+\.\d{4}) \(Wolse\) WAPE points', readme)
     assert pick, 'key-results line "Chosen model" not found'
@@ -105,7 +109,7 @@ def test_readme_key_results_and_winner_match_csv(board, readme):
 
     for track, label in (('jeonse', 'Jeonse'), ('wolse', 'Wolse')):
         c, lead = chosen.loc[track], leader.loc[track]
-        line = re.search(rf'\*\*{label}: `(\w+)`\*\*.*?WAPE (\d+\.\d\d)%, median bias (-?\d+\.\d\d)%, aggregate bias (-?\d+\.\d\d)%\..*?leader `(\w+)` has (\d+\.\d\d)% \(difference (\d+\.\d{{4}}) points', readme, re.S)
+        line = re.search(rf'\*\*{label}: `(\w+)`\*\*.*?WAPE (\d+\.\d\d)%, median bias (-?\d+\.\d\d)%, aggregate bias (-?\d+\.\d\d)%\..*?choice `(\w+)` has (\d+\.\d\d)% \(difference (\d+\.\d{{4}}) points', readme, re.S)
         assert line, f'winner bullet for {label} not found'
         assert line.group(1) == c['model_id'] and line.group(5) == lead['model_id']
         assert (line.group(2), line.group(3), line.group(4)) == (f2(c['wape_pct']), f2(c['median_bias_pct']), f2(c['aggregate_bias_pct']))

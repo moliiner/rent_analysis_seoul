@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from rent_model.compare import (FAMILIES, annual_cash_cost, area_buckets, bootstrap_best_share, complexity_of,
-                                error_by_group, extrapolation_kind, family_of, family_table, interval_multipliers,
+from rent_model.compare import (FAMILIES, _base_id, annual_cash_cost, area_buckets, bootstrap_best_share, classify_projection,
+                                complexity_of, error_by_group, extrapolation_kind, family_of, family_table, interval_multipliers,
                                 load_runs, one_se_selection, profile_frame, ranking, representative_profile)
 
 
@@ -114,3 +114,76 @@ def test_annual_cost_and_multipliers():
     fc = pd.DataFrame({'mean': [100.0, 100.0], 'lo80': [90.0, 80.0], 'hi80': [110.0, 125.0]})
     lo, hi = interval_multipliers(fc)
     assert lo.tolist() == [0.9, 0.8] and hi.tolist() == [1.1, 1.25]
+
+
+# ---------------------------------------------------------------------------------------------
+# Robust selection protocol (CLAUDE.md rule 8, amended)
+# ---------------------------------------------------------------------------------------------
+def month_driven_models():
+    """Two models whose WAPE difference is a month-level effect: rows say 'different', months say 'tie'."""
+    months = np.repeat(np.arange(12), 500)
+    y = np.full(months.size, 100.0)
+    preds = {'a_complex': y + np.where(months < 7, 5.0, 7.0), 'b_simple': y + 6.0}
+    runs = pd.DataFrame({'model_id': list(preds), 'complexity': [9, 1], 'aggregate_bias_pct': [0.0, 0.0]})
+    districts = np.tile(np.arange(5), months.size // 5 + 1)[: months.size]
+    return y, preds, runs, months, districts
+
+
+def test_selection_uses_the_most_conservative_standard_error():
+    y, preds, runs, months, districts = month_driven_models()
+    row_table, row_leader, row_selected = one_se_selection(y, preds, runs, n_boot=300)
+    block_table, block_leader, block_selected = one_se_selection(y, preds, runs, n_boot=300, months=months, districts=districts)
+    assert row_leader == block_leader == 'a_complex'
+    assert not bool(row_table.set_index('model_id').loc['b_simple', 'tie_with_leader'])      # rows: "clearly different"
+    assert row_selected == 'a_complex'
+    b = block_table.set_index('model_id').loc['b_simple']
+    assert bool(b['tie_with_leader']) and b['se_source'] == 'month'                          # month blocks: a tie
+    assert block_selected == 'b_simple'                                                      # tie -> fewer parameters
+    assert b['se_diff'] > row_table.set_index('model_id').loc['b_simple', 'se_diff']
+
+
+def test_classify_projection_is_behavioural():
+    months = pd.date_range('2026-01-01', '2028-12-01', freq='MS')
+    flat = pd.Series(100.0, index=months)
+    seasonal = pd.Series(100.0 + 3 * np.sin(2 * np.pi * months.month / 12), index=months)
+    trend = pd.Series(100.0 * 1.01 ** (np.arange(36) / 12), index=months)
+    assert classify_projection(flat) == 'level persistence'
+    assert classify_projection(seasonal) == 'level persistence'      # seasonal wiggles average out over a year
+    assert classify_projection(trend) == 'extrapolates'
+    assert classify_projection(flat * 1.0005) == 'level persistence'  # below the 0.1% tolerance
+
+
+def test_median_variants_inherit_the_label_family_and_complexity():
+    assert family_of('hgb_static_median') == 'boosting' and family_of('hybrid_hgb_median') == 'time-series/hybrid'
+    assert complexity_of('hgb_detrended_median') == complexity_of('hgb_detrended')
+    assert extrapolation_kind('hgb_detrended_median') == extrapolation_kind('hgb_detrended')
+    assert extrapolation_kind('hgb_time_median')[1] is False and extrapolation_kind('hybrid_hgb_median')[1] is True
+
+
+def test_behaviour_is_loaded_from_the_pseudotest_report(tmp_path):
+    write_run(tmp_path, 'jeonse', 'hybrid_hgb', 17.4)
+    write_run(tmp_path, 'jeonse', 'hgb_static', 18.6)
+    write_run(tmp_path, 'jeonse', 'ridge_time', 24.0)
+    (tmp_path / 'pseudotest_jeonse.json').write_text(json.dumps({'candidates': {
+        'hybrid_hgb': {'behaviour': 'level persistence'}, 'ridge_time': {'behaviour': 'extrapolates'}}}), encoding='utf-8')
+    runs = load_runs(tmp_path).set_index('model_id')
+    assert runs.loc['hybrid_hgb', 'behaviour'] == 'level persistence' and not runs.loc['hybrid_hgb', 'can_extrapolate']
+    assert runs.loc['ridge_time', 'can_extrapolate'] and runs.loc['hgb_static', 'behaviour'] == 'not evaluated'
+    assert bool(runs.loc['hybrid_hgb', 'extrapolation_label_ok'])      # the label alone would have said "extrapolates"
+
+
+def test_bootstrap_best_share_with_month_blocks_is_less_decisive_than_rows():
+    y, preds, runs, months, districts = month_driven_models()
+    rows = bootstrap_best_share(y, preds, n_boot=300)
+    blocks = bootstrap_best_share(y, preds, n_boot=300, blocks=months)
+    assert rows.sum() == pytest.approx(1.0) and blocks.sum() == pytest.approx(1.0)
+    assert rows['a_complex'] > 0.99                    # rows: A is "always" the best
+    assert 0.5 < blocks['a_complex'] < 0.95            # months: A is only usually the best
+
+
+def test_native_median_ids_are_not_treated_as_median_loss_variants():
+    for model_id in ('baseline_global_median', 'baseline_train_median', 'kmeans_median', 'gmm_median'):
+        assert _base_id(model_id) == model_id
+        assert complexity_of(model_id) >= 0
+    assert _base_id('hybrid_hgb_median_oracle') == 'hybrid_hgb' and _base_id('hgb_time_median') == 'hgb_time'
+    assert family_of('kmeans_median') == 'pure unsupervised' and extrapolation_kind('gmm_median') == ('none', False)
