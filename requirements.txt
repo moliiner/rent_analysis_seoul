@@ -11,3 +11,4 @@ nbconvert>=7.16
 nbformat>=5.10
 pytest>=8.0
 # lightgbm>=4.3   # optional, only for the gradient boosting model notebook
+# streamlit>=1.40   # optional, only for app/streamlit_app.py
