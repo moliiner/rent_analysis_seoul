@@ -1,0 +1,43 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "rf_time",
+    "run_at": "2026-10-10T10:20:39+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 17.905087295456703,
+    "mae": 8069.965787404562,
+    "mdape_pct": 13.629055068049873,
+    "median_bias_pct": -5.163495243441103,
+    "aggregate_bias_pct": -6.4562882278872555,
+    "rmse_log": 0.2912467776085096,
+    "r2_log": 0.8513610989719846,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 20.45087443274051,
+    "mape_dq_max_pct": 42.65544344393033,
+    "meta": {
+      "variant": "time",
+      "params": {
+        "n_estimators": 300,
+        "max_depth": 20,
+        "min_samples_leaf": 1,
+        "max_features": 0.7
+      },
+      "cv_wape_mean": 18.955857709976648,
+      "tuning_rows": 60000,
+      "features": [
+        "district_name",
+        "building_type",
+        "contract_type",
+        "renewal_right_used",
+        "log_area",
+        "floor",
+        "floor_missing",
+        "building_age",
+        "t"
+      ],
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]
