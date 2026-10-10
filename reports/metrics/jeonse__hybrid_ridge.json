@@ -1,0 +1,33 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "hybrid_ridge",
+    "run_at": "2026-10-10T13:31:37+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 23.135556803474596,
+    "mae": 10427.380151560032,
+    "mdape_pct": 17.403283384790285,
+    "median_bias_pct": -4.8005542300450355,
+    "aggregate_bias_pct": -8.473424714399723,
+    "rmse_log": 0.349130342954225,
+    "r2_log": 0.78640778583586,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 26.457757532640876,
+    "mape_dq_max_pct": 49.95586918979126,
+    "meta": {
+      "valid": true,
+      "structure": "ridge",
+      "structure_params": {
+        "alpha": 0.01
+      },
+      "structure_features": "static features, no time feature",
+      "target": "y_adj = log1p(target) - log(index_t / 100), TRAIN-only hedonic index",
+      "index_candidate": "naive",
+      "index_2025_first": 101.4613169437821,
+      "index_2025_last": 101.4613169437821,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "hybrid_hgb",
+    "run_at": "2026-10-10T13:31:38+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 17.444758713756546,
+    "mae": 7862.492020648489,
+    "mdape_pct": 12.959757945890246,
+    "median_bias_pct": -3.3505236405171828,
+    "aggregate_bias_pct": -5.026291517054267,
+    "rmse_log": 0.2806046837523508,
+    "r2_log": 0.8620251090738477,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 20.412683990759845,
+    "mape_dq_max_pct": 43.68002645368601,
+    "meta": {
+      "valid": true,
+      "structure": "hgb",
+      "structure_params": {
+        "learning_rate": 0.05,
+        "max_iter": 1000,
+        "max_leaf_nodes": 127,
+        "min_samples_leaf": 10,
+        "l2_regularization": 1.0
+      },
+      "structure_features": "static features, no time feature",
+      "target": "y_adj = log1p(target) - log(index_t / 100), TRAIN-only hedonic index",
+      "index_candidate": "naive",
+      "index_2025_first": 101.4613169437821,
+      "index_2025_last": 101.4613169437821,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]

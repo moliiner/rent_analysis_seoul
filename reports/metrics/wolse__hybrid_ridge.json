@@ -1,0 +1,33 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "hybrid_ridge",
+    "run_at": "2026-10-10T13:31:38+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 50.4930148079898,
+    "mae": 37.85177435012514,
+    "mdape_pct": 39.57370883567206,
+    "median_bias_pct": -19.720968439769177,
+    "aggregate_bias_pct": -28.181608430635634,
+    "rmse_log": 0.7460076071135637,
+    "r2_log": 0.24461068425554522,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 83.81012496688831,
+    "mape_dq_max_pct": 140.57725892620624,
+    "meta": {
+      "valid": true,
+      "structure": "ridge",
+      "structure_params": {
+        "alpha": 0.01
+      },
+      "structure_features": "static features, no time feature",
+      "target": "y_adj = log1p(target) - log(index_t / 100), TRAIN-only hedonic index",
+      "index_candidate": "drift",
+      "index_2025_first": 94.7575424145015,
+      "index_2025_last": 93.21117909542325,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025"
+    }
+  }
+]

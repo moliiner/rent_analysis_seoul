@@ -1,0 +1,34 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "hybrid_ridge_oracle",
+    "run_at": "2026-10-10T13:31:38+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 49.391297757706745,
+    "mae": 37.02587901898716,
+    "mdape_pct": 37.81055111846211,
+    "median_bias_pct": -15.3337803245131,
+    "aggregate_bias_pct": -24.240896482695952,
+    "rmse_log": 0.7434785948460584,
+    "r2_log": 0.24972363661546093,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 86.18036326800791,
+    "mape_dq_max_pct": 150.19729147029912,
+    "meta": {
+      "valid": false,
+      "structure": "ridge",
+      "structure_params": {
+        "alpha": 0.01
+      },
+      "structure_features": "static features, no time feature",
+      "target": "y_adj = log1p(target) - log(index_t / 100), TRAIN-only hedonic index",
+      "index_candidate": "oracle hedonic index fitted on all 48 months",
+      "index_2025_first": 100.62044618577985,
+      "index_2025_last": 95.27869662788463,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "note": "INVALID as a model: the index is fitted with 2025 data. Diagnostic upper bound for the error decomposition."
+    }
+  }
+]

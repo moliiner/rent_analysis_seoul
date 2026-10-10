@@ -1,0 +1,38 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "hybrid_hgb_oracle",
+    "run_at": "2026-10-10T13:31:38+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 44.876048172221665,
+    "mae": 33.64105026407525,
+    "mdape_pct": 34.977412373700254,
+    "median_bias_pct": -15.0720444142811,
+    "aggregate_bias_pct": -20.950607855843515,
+    "rmse_log": 0.6936327260411579,
+    "r2_log": 0.34695444721598157,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 78.39787346437569,
+    "mape_dq_max_pct": 135.63649272259323,
+    "meta": {
+      "valid": false,
+      "structure": "hgb",
+      "structure_params": {
+        "learning_rate": 0.03,
+        "max_iter": 300,
+        "max_leaf_nodes": 127,
+        "min_samples_leaf": 100,
+        "l2_regularization": 10.0
+      },
+      "structure_features": "static features, no time feature",
+      "target": "y_adj = log1p(target) - log(index_t / 100), TRAIN-only hedonic index",
+      "index_candidate": "oracle hedonic index fitted on all 48 months",
+      "index_2025_first": 100.62044618577985,
+      "index_2025_last": 95.27869662788463,
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "note": "INVALID as a model: the index is fitted with 2025 data. Diagnostic upper bound for the error decomposition."
+    }
+  }
+]
