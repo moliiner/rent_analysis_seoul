@@ -15,7 +15,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 
 from . import config
+from .features import NeighbourhoodGrouper
 from .forest import to_original, wape_scorer  # noqa: F401  (re-exported for the notebook)
+from .metrics import wape
 
 TIME = config.TIME_FEATURE
 DONG = config.LEGAL_DONG_FEATURE
@@ -33,7 +35,19 @@ PARAM_DISTRIBUTIONS = {
 }
 
 
-def feature_columns(variant, extra_categorical=(), extra_numeric=()):
+# Wider search used by the neighbourhood-aware finalists: the grid goes beyond max_leaf_nodes=127 and the
+# minimum count of a neighbourhood level is tuned together with the other settings.
+EXTENDED_PARAM_DISTRIBUTIONS = {
+    'learning_rate': [0.05, 0.1],
+    'max_iter': [300, 600],
+    'max_leaf_nodes': [31, 63, 127, 255],
+    'min_samples_leaf': [20, 50, 100],
+    'l2_regularization': [0.0, 1.0, 10.0],
+    'min_frequency': [10, 30, 100],
+}
+
+
+def feature_columns(variant, extra_categorical=(), extra_numeric=(), neighbourhood=False):
     """Columns that are model features. `t` is a feature of the 'time' variant only.
 
     `extra_categorical` / `extra_numeric` append caller-built columns (for example a cluster label
@@ -41,14 +55,14 @@ def feature_columns(variant, extra_categorical=(), extra_numeric=()):
     cols = list(config.CATEGORICAL_FEATURES) + list(extra_categorical) + NUMERIC + list(extra_numeric)
     if variant == 'time':
         cols.append(TIME)
-    if variant == 'legal_dong':
+    if variant == 'legal_dong' or neighbourhood:
         cols.append(DONG)
     return cols
 
 
-def required_columns(variant):
+def required_columns(variant, neighbourhood=False):
     """Columns the estimator needs in X: the features plus `t` (validation tail and trend)."""
-    cols = feature_columns(variant)
+    cols = feature_columns(variant, neighbourhood=neighbourhood)
     return cols if TIME in cols else cols + [TIME]
 
 
@@ -72,7 +86,7 @@ class RareGrouper(BaseEstimator, TransformerMixin):
         return np.where(values.isin(self.keep_), values, OTHER).reshape(-1, 1)
 
 
-def build_preprocessor(variant, min_frequency=30, extra_categorical=(), extra_numeric=()):
+def build_preprocessor(variant, min_frequency=30, extra_categorical=(), extra_numeric=(), neighbourhood=False):
     """Ordinal encoding of the categoricals (unknown -> NaN, i.e. 'missing' for the booster)."""
     def encoder():
         return OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=np.nan)
@@ -80,6 +94,8 @@ def build_preprocessor(variant, min_frequency=30, extra_categorical=(), extra_nu
     parts = [('cat', encoder(), list(config.CATEGORICAL_FEATURES) + list(extra_categorical))]
     if variant == 'legal_dong':
         parts.append(('dong', Pipeline([('group', RareGrouper(min_frequency)), ('ord', encoder())]), [DONG]))
+    if neighbourhood and variant != 'legal_dong':
+        parts.append(('dong', NeighbourhoodGrouper(min_count=min_frequency), [DONG]))
     parts.append(('num', 'passthrough', NUMERIC + list(extra_numeric) + ([TIME] if variant == 'time' else [])))
     return ColumnTransformer(parts, remainder='drop', verbose_feature_names_out=False)
 
@@ -102,8 +118,9 @@ class BoostedModel(RegressorMixin, BaseEstimator):
 
     def __init__(self, variant='static', learning_rate=0.1, max_iter=500, max_leaf_nodes=31,
                  min_samples_leaf=20, l2_regularization=0.0, quantile=None, tail_months=6,
-                 min_frequency=30, extra_categorical=(), extra_numeric=()):
+                 min_frequency=30, extra_categorical=(), extra_numeric=(), neighbourhood=False):
         self.variant = variant
+        self.neighbourhood = neighbourhood
         self.learning_rate = learning_rate
         self.max_iter = max_iter
         self.max_leaf_nodes = max_leaf_nodes
@@ -132,10 +149,10 @@ class BoostedModel(RegressorMixin, BaseEstimator):
         else:
             y_fit = y
 
-        self.pre_ = build_preprocessor(self.variant, self.min_frequency, self.extra_categorical, self.extra_numeric)
-        A = self.pre_.fit_transform(X[feature_columns(self.variant, self.extra_categorical, self.extra_numeric)])
+        self.pre_ = build_preprocessor(self.variant, self.min_frequency, self.extra_categorical, self.extra_numeric, self.neighbourhood)
+        A = self.pre_.fit_transform(X[feature_columns(self.variant, self.extra_categorical, self.extra_numeric, self.neighbourhood)])
         n_cat = (len(config.CATEGORICAL_FEATURES) + len(self.extra_categorical)
-                 + (1 if self.variant == 'legal_dong' else 0))
+                 + (1 if self.variant == 'legal_dong' or self.neighbourhood else 0))
         categorical = np.arange(A.shape[1]) < n_cat
 
         tail = t > t.max() - self.tail_months
@@ -150,7 +167,7 @@ class BoostedModel(RegressorMixin, BaseEstimator):
 
     def predict(self, X):
         pred = self.model_.predict(self.pre_.transform(
-            X[feature_columns(self.variant, self.extra_categorical, self.extra_numeric)]))
+            X[feature_columns(self.variant, self.extra_categorical, self.extra_numeric, self.neighbourhood)]))
         if self.variant == 'detrended':
             pred = pred + self.intercept_ + self.slope_ * X[TIME].to_numpy(dtype=float)
         return pred
@@ -198,3 +215,37 @@ def interval_coverage(y, lower, upper):
     """Share of observations inside [lower, upper] and mean interval width."""
     y = np.asarray(y, dtype=float)
     return float(np.mean((y >= lower) & (y <= upper))), float(np.mean(upper - lower))
+
+
+def adjusted_wape_scorer(estimator, X, y_adj):
+    """Negative WAPE on the original scale of a hybrid structure model fit on y_adj.
+
+    `X` carries the column `adj_log` = log(index_t / 100) of each row, added back before the
+    back-transformation (the index level is held fixed, so the score isolates the structure error)."""
+    adj = X['adj_log'].to_numpy(dtype=float)
+    y = np.expm1(np.asarray(y_adj, dtype=float) + adj)
+    return -wape(y, to_original(estimator.predict(X) + adj))
+
+
+def tune_extended(variant, X, y, folds, n_iter=20, quantile=None, neighbourhood=False, scorer=None,
+                  distributions=None):
+    """RandomizedSearchCV over expanding-window folds for one finalist on its own target `y`.
+
+    `y` is log1p(target) for a detrended model (the booster learns the residual of the trend fit
+    on each fold's training part) or y_adj for a hybrid structure model (`scorer=adjusted_wape_scorer`
+    and an `adj_log` column in X). Returns (best_params, cv_table sorted by mean score, n_fit_rows)."""
+    distributions = EXTENDED_PARAM_DISTRIBUTIONS if distributions is None else distributions
+    search = RandomizedSearchCV(
+        BoostedModel(variant=variant, quantile=quantile, neighbourhood=neighbourhood), distributions, n_iter=n_iter,
+        cv=folds, scoring=scorer or wape_scorer, refit=False, n_jobs=1, random_state=config.RANDOM_SEED)
+    search.fit(X, y)
+    res = search.cv_results_
+    table = pd.DataFrame(res['params'])
+    table['cv_wape_mean'] = -res['mean_test_score']
+    table['cv_wape_std'] = res['std_test_score']
+    for k in range(len(folds)):
+        table[f'fold{k + 1}'] = -res[f'split{k}_test_score']
+    table = table.sort_values('cv_wape_mean').reset_index(drop=True)
+    integer = ('max_iter', 'max_leaf_nodes', 'min_samples_leaf', 'min_frequency')
+    best = {k: (int(table.loc[0, k]) if k in integer else float(table.loc[0, k])) for k in distributions}
+    return best, table, int(len(X))

@@ -41,14 +41,16 @@ def run_windows(recipe, df_track, features, windows=WINDOWS):
 
     Returns {window name: {'metrics', 'y_true', 'y_pred', 'months', 'districts', 'n_train', 'n_test'}}.
     The recipe is fit on the training rows only (it asserts that none is at or after the fit end).
+    `recipe` may be a dict {window name: recipe} when the settings differ by window.
     """
     check_windows(windows)
-    target = config.TRACKS[recipe.track]['target']
     out = {}
     for window in windows:
+        rec = recipe[window['name']] if isinstance(recipe, dict) else recipe   # a recipe per window (settings tuned in it)
+        target = config.TRACKS[rec.track]['target']
         train, test = window_split(df_track, window)
-        recipe.fit(train, window['fit_end'])
-        pred = recipe.predict(features(test), test['contract_month'])
+        rec.fit(train, window['fit_end'])
+        pred = rec.predict(features(test), test['contract_month'])
         y = test[target].to_numpy()
         out[window['name']] = {
             'metrics': all_metrics(y, pred), 'y_true': y, 'y_pred': np.asarray(pred, dtype=float),

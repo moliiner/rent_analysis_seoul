@@ -18,6 +18,14 @@ def month_index(dates):
     return ((dates.dt.year - origin.year) * 12 + (dates.dt.month - origin.month)).to_numpy()
 
 
+def window_folds(df_fit, n_splits=config.N_CV_SPLITS):
+    """3-fold expanding-window CV inside any fit window (the first fold trains on 12 months, or on 6 months
+    when the window is shorter than 24 months). Positions refer to `df_fit`; only its rows are used."""
+    months = month_index(df_fit['contract_date'])
+    n_months = int(months.max() - months.min() + 1)
+    return expanding_window_folds(df_fit, n_splits, first_train_months=12 if n_months >= 24 else 6)
+
+
 def expanding_window_folds(df_train, n_splits=config.N_CV_SPLITS, first_train_months=12):
     """Expanding-window time CV inside TRAIN.
 

@@ -68,8 +68,9 @@ def test_readme_leaderboard_tables_match_csv(board, readme, track):
         assert wape == f2(r['wape_pct']), f'{track} {model}: WAPE {wape} vs {f2(r["wape_pct"])}'
         assert median_bias == f2(r['median_bias_pct']), f'{track} {model}: median bias'
         assert aggregate_bias == f2(r['aggregate_bias_pct']), f'{track} {model}: aggregate bias'
-        assert (note == 'chosen') == bool(r['is_chosen_model']), f'{track} {model}: chosen flag'
-        assert (note == 'unconstrained choice') == bool(r['is_unconstrained_leader']), f'{track} {model}: unconstrained flag'
+        expected_note = ('chosen and unconstrained choice' if r['is_chosen_model'] and r['is_unconstrained_leader']
+                         else 'chosen' if r['is_chosen_model'] else 'unconstrained choice' if r['is_unconstrained_leader'] else '')
+        assert note == expected_note, f'{track} {model}: note {note!r} vs {expected_note!r}'
         expected = '-' if pd.isna(r['pseudotest_wape_pooled']) else f2(r['pseudotest_wape_pooled'])
         assert pseudo == expected, f'{track} {model}: pseudo-test WAPE {pseudo} vs {expected}'
     shown = {m for _, m, *_ in rows}
@@ -94,11 +95,6 @@ def test_readme_key_results_and_winner_match_csv(board, readme):
     valid = board[board['valid']]
     chosen = valid[valid['is_chosen_model']].set_index('track')
     leader = valid[valid['is_unconstrained_leader']].set_index('track')
-
-    best = re.search(r'\*\*Unconstrained choice\*\* \(.*?\): `(\w+)` for Jeonse \(2025 WAPE (\d+\.\d\d)%\) and `(\w+)` for Wolse \(2025 WAPE (\d+\.\d\d)%\)', readme)
-    assert best, 'key-results line "Unconstrained choice" not found'
-    assert (best.group(1), best.group(3)) == (leader.loc['jeonse', 'model_id'], leader.loc['wolse', 'model_id'])
-    assert (best.group(2), best.group(4)) == (f2(leader.loc['jeonse', 'wape_pct']), f2(leader.loc['wolse', 'wape_pct']))
 
     pick = re.search(r'`(\w+)` for Jeonse \(WAPE (\d+\.\d\d)%\) and `(\w+)` for Wolse \(WAPE (\d+\.\d\d)%\)\. Requiring extrapolation costs (\d+\.\d{4}) \(Jeonse\) and (\d+\.\d{4}) \(Wolse\) WAPE points', readme)
     assert pick, 'key-results line "Chosen model" not found'

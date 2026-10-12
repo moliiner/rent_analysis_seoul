@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Runs the test suite and then every modeling notebook in order (00 .. 08, 10, 09).
+# Runs the test suite and then every modeling notebook in order (00 .. 08, 10, 11, 09).
 # Usage:  bash scripts/run_all.sh            run everything
 #         DRY_RUN=1 bash scripts/run_all.sh  only print the commands
-# Notebook 10 runs before 09: it writes the pseudo-test selection and the median-loss runs that 09 reads.
+# Notebooks 10 and 11 run before 09: they write the pseudo-test selections and the median-loss / neighbourhood-aware runs that 09 reads (11 takes hours).
 # Notebooks are executed in place (outputs are overwritten). Each model run is appended to
 # reports/metrics/{track}__{model_id}.json; every table reads the last run of each model.
 set -euo pipefail
@@ -22,6 +22,7 @@ NOTEBOOKS=(
   notebooks/07_price_index_forecasting.ipynb
   notebooks/08_hybrid_model.ipynb
   notebooks/10_selection_robustness.ipynb
+  notebooks/11_neighbourhood_trend_models.ipynb
   notebooks/09_model_comparison_projection.ipynb
 )
 

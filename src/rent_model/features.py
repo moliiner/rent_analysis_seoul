@@ -1,8 +1,13 @@
 """Feature and target construction. Nothing here is fit on data, so it cannot leak TEST information."""
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
 
 from . import config
+
+SEPARATOR = ' | '
+OTHER_LEVEL = 'OTHER'
+MAX_NEIGHBOURHOOD_LEVELS = 254      # native categorical support of HistGradientBoosting is limited to 255 levels
 
 
 def select_track(df, track):
@@ -60,3 +65,43 @@ def build_target(df, track, log=True):
 def inverse_target(y_log):
     """Back-transform predictions from the log1p scale."""
     return np.expm1(y_log)
+
+
+class NeighbourhoodGrouper(BaseEstimator, TransformerMixin):
+    """Grouped `legal_dong` feature: 'district | dong' levels with at least `min_count` rows in the fit
+    window keep their own level; every other level, and every level unseen at predict time, goes to the
+    OTHER level of its own district ('district | OTHER'). At most `max_levels` levels are produced
+    (kept neighbourhoods plus one OTHER level per fit district); a district never seen in fit maps to a
+    single global OTHER level. Only the rows given to `fit` define the levels. `transform` returns
+    integer codes (a native categorical feature of the booster); `group` returns the level names."""
+
+    def __init__(self, min_count=30, max_levels=MAX_NEIGHBOURHOOD_LEVELS):
+        self.min_count = min_count
+        self.max_levels = max_levels
+
+    @staticmethod
+    def _district(values):
+        return values.str.split(SEPARATOR, n=1).str[0]
+
+    def fit(self, X, y=None):
+        values = pd.Series(np.asarray(X, dtype=object).ravel(), dtype=object).astype(str)
+        districts = sorted(set(self._district(values)))
+        counts = values.value_counts()
+        counts = counts[counts >= self.min_count]
+        budget = max(self.max_levels - len(districts), 0)
+        self.kept_ = set(counts.head(budget).index)                   # value_counts is sorted by frequency
+        self.districts_ = set(districts)
+        self.levels_ = sorted(self.kept_) + [f'{d}{SEPARATOR}{OTHER_LEVEL}' for d in districts]
+        self.codes_ = {level: i for i, level in enumerate(self.levels_)}
+        self.n_fit_rows_ = int(len(values))
+        return self
+
+    def group(self, X):
+        values = pd.Series(np.asarray(X, dtype=object).ravel(), dtype=object).astype(str)
+        district = self._district(values)
+        other = np.where(district.isin(self.districts_), district + SEPARATOR + OTHER_LEVEL, OTHER_LEVEL)
+        return np.where(values.isin(self.kept_), values, other)
+
+    def transform(self, X):
+        grouped = pd.Series(self.group(X))
+        return grouped.map(self.codes_).fillna(len(self.levels_)).to_numpy(dtype=float).reshape(-1, 1)

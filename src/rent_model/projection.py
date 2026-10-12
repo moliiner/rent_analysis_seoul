@@ -44,10 +44,33 @@ class ScenarioModel:
         profile['legal_dong'] = (source['district_name'] + ' | ' + source['legal_dong_name']).mode().iloc[0]
         return profile, n_rows
 
+    def neighbourhood_weights(self, profile):
+        """Share of the contracts of the profile's district and building type in each neighbourhood (latest
+        year of the data, all years if the group has no row in it). Used to average a neighbourhood-aware model."""
+        group = self.track_df[(self.track_df['district_name'] == profile['district_name'])
+                              & (self.track_df['building_type'] == profile['building_type'])]
+        recent = group[group['contract_date'].dt.year == group['contract_date'].dt.year.max()]
+        group = recent if len(recent) else group
+        shares = (group['district_name'] + ' | ' + group['legal_dong_name']).value_counts(normalize=True)
+        return shares
+
     def project(self, profile, months=FUTURE):
-        """Monthly base / low / high prediction (10,000 KRW) of a profile; Wolse is monthly rent."""
+        """Monthly base / low / high prediction (10,000 KRW) of a profile; Wolse is monthly rent.
+
+        A model with a neighbourhood feature is evaluated in every neighbourhood of the profile's district and
+        building type and the weighted median of those predictions is the base path (weights = share of the
+        contracts); the single most frequent neighbourhood would not represent the district."""
         months = pd.DatetimeIndex(months)
-        base = pd.Series(self.recipe.predict(profile_frame(profile, months), months), index=months)
+        frame = profile_frame(profile, months)
+        if config.LEGAL_DONG_FEATURE in getattr(self.recipe, 'columns_', []):
+            shares = self.neighbourhood_weights(profile)
+            preds = np.column_stack([self.recipe.predict(frame.assign(**{config.LEGAL_DONG_FEATURE: dong}), months) for dong in shares.index])
+            order = np.argsort(preds, axis=1)
+            sorted_preds, sorted_w = np.take_along_axis(preds, order, axis=1), shares.to_numpy()[order]
+            pick = (np.cumsum(sorted_w, axis=1) >= 0.5).argmax(axis=1)
+            base = pd.Series(sorted_preds[np.arange(len(months)), pick], index=months)
+        else:
+            base = pd.Series(self.recipe.predict(frame, months), index=months)
         m_lo, m_hi = interval_multipliers(self.index_forecast)
         return pd.DataFrame({'base': base, 'low': (base + 1) * m_lo.to_numpy() - 1,
                              'high': (base + 1) * m_hi.to_numpy() - 1})

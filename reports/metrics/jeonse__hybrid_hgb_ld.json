@@ -1,0 +1,42 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "hybrid_hgb_ld",
+    "run_at": "2026-10-12T10:06:22+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 14.44693297955638,
+    "mae": 6511.348029424556,
+    "mdape_pct": 11.10766625886084,
+    "median_bias_pct": -3.105211620417039,
+    "aggregate_bias_pct": -4.347879314873367,
+    "rmse_log": 0.2502551661759233,
+    "r2_log": 0.8902571256139202,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 18.159548608869923,
+    "mape_dq_max_pct": 43.05862509841199,
+    "meta": {
+      "base_model": "hybrid_hgb_ld",
+      "loss": "squared error on log1p",
+      "structure_params": {
+        "learning_rate": 0.05,
+        "max_iter": 300,
+        "max_leaf_nodes": 255,
+        "min_samples_leaf": 20,
+        "l2_regularization": 0.0,
+        "min_frequency": 30
+      },
+      "tuning": "RandomizedSearchCV, 3-fold expanding window inside the fit window (rows before 2025-01-01), median-loss finalist of the family",
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "neighbourhood": true,
+      "recalibrated": false,
+      "recal_factor": null,
+      "behaviour": "level persistence",
+      "pseudo_test_wape": {
+        "2023": 15.801711900871931,
+        "2024": 15.20714152945187
+      }
+    }
+  }
+]

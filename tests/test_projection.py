@@ -39,3 +39,16 @@ def test_larger_apartments_cost_more(sample):
     small, _ = scenario.profile('Mapo-gu', 'Apartment', 40.0)
     large, _ = scenario.profile('Mapo-gu', 'Apartment', 110.0)
     assert scenario.project(large)['base'].mean() > scenario.project(small)['base'].mean()
+
+
+def test_neighbourhood_aware_scenario_is_the_weighted_median_over_the_neighbourhoods_of_the_group(sample):
+    scenario = fit_scenario_model(sample, 'jeonse', model_id='hgb_detrended_ld_median')
+    profile, _ = scenario.profile('Mapo-gu', 'Apartment', 60.0)
+    shares = scenario.neighbourhood_weights(profile)
+    assert abs(shares.sum() - 1.0) < 1e-9 and len(shares) > 1
+    months = FUTURE
+    frame = __import__('rent_model.compare', fromlist=['x']).profile_frame(profile, months)
+    per_dong = np.column_stack([scenario.recipe.predict(frame.assign(legal_dong=d), months) for d in shares.index])
+    base = scenario.project(profile)['base'].to_numpy()
+    assert (base >= per_dong.min(axis=1)).all() and (base <= per_dong.max(axis=1)).all()
+    assert all(b in per_dong[i] for i, b in enumerate(base))        # the weighted median is one of the predictions

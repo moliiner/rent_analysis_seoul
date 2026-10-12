@@ -29,7 +29,7 @@ _COMPLEXITY = {
     'ridge_time_kmeans': 9, 'ridge_time_tier': 9, 'ridge_time_gmm': 9,
     'rf_static': 10, 'rf_time': 10, 'rf_detrended': 11,
     'hgb_static': 12, 'hgb_time': 12, 'hgb_detrended': 13, 'hgb_legal_dong': 13,
-    'hybrid_ridge': 10, 'hybrid_hgb': 14,
+    'hybrid_ridge': 10, 'hybrid_hgb': 14, 'hgb_detrended_ld': 14, 'hybrid_hgb_ld': 15,
     'hgb_time_kmeans': 15, 'hgb_time_tier': 15, 'hgb_time_gmm': 15,
 }
 
@@ -51,15 +51,15 @@ def family_of(model_id):
     return 'linear'
 
 
-MEDIAN_VARIANT_BASES = ('hgb_static', 'hgb_time', 'hgb_detrended', 'hgb_legal_dong', 'hybrid_hgb')
+MEDIAN_VARIANT_BASES = ('hgb_static', 'hgb_time', 'hgb_detrended', 'hgb_legal_dong', 'hybrid_hgb', 'hgb_detrended_ld', 'hybrid_hgb_ld')
 
 
 def _base_id(model_id):
-    """Model id without the `_oracle` suffix and without the `_median` suffix of a median-loss variant.
+    """Model id without the `_oracle` and `_recal` suffixes and without the `_median` suffix of a median-loss variant.
 
     Only the boosting / hybrid models have median-loss variants; ids that natively end in `_median`
     (`baseline_global_median`, `kmeans_median`, `gmm_median`...) are left untouched."""
-    model_id = model_id.removesuffix('_oracle')
+    model_id = model_id.removesuffix('_oracle').removesuffix('_recal')
     stem = model_id.removesuffix('_median')
     return stem if model_id.endswith('_median') and stem in MEDIAN_VARIANT_BASES else model_id
 
@@ -68,7 +68,7 @@ def complexity_of(model_id):
     base = _base_id(model_id)
     if base not in _COMPLEXITY:
         raise KeyError(f'no complexity level for {model_id}')
-    return _COMPLEXITY[base]
+    return _COMPLEXITY[base] + (1 if model_id.endswith('_recal') else 0)      # the scale factor is one more fitted component
 
 
 def extrapolation_kind(model_id):
@@ -83,7 +83,7 @@ def extrapolation_kind(model_id):
     base = _base_id(model_id)
     if base.startswith('hybrid'):
         return 'forecasted index', True
-    if base.endswith('_detrended'):
+    if re.search(r'_detrended(_ld)?$', base):
         return 'log-linear trend (detrended)', True
     if base.startswith(('ridge_time', 'lasso_time', 'elasticnet_time')):
         return 'linear time feature', True
@@ -110,13 +110,16 @@ def classify_projection(path, tolerance=BEHAVIOUR_TOLERANCE):
 
 
 def load_behaviour(track, metrics_dir=None):
-    """{model_id: behaviour} saved by notebooks/10 (reports/metrics/pseudotest_{track}.json); empty if absent."""
+    """{model_id: behaviour} saved by notebooks/10 and 11 (reports/metrics/pseudotest_{track}.json and
+    pseudotest_v2_{track}.json; the later file wins); empty if absent."""
     metrics_dir = config.METRICS_DIR if metrics_dir is None else metrics_dir
-    path = metrics_dir / f'pseudotest_{track}.json'
-    if not path.exists():
-        return {}
-    candidates = json.loads(path.read_text(encoding='utf-8')).get('candidates', {})
-    return {model_id: info['behaviour'] for model_id, info in candidates.items()}
+    out = {}
+    for name in (f'pseudotest_{track}.json', f'pseudotest_v2_{track}.json'):
+        path = metrics_dir / name
+        if path.exists():
+            candidates = json.loads(path.read_text(encoding='utf-8')).get('candidates', {})
+            out.update({model_id: info['behaviour'] for model_id, info in candidates.items()})
+    return out
 
 
 def load_runs(metrics_dir=None):

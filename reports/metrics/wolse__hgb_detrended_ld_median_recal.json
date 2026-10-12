@@ -1,0 +1,42 @@
+[
+  {
+    "track": "wolse",
+    "model_id": "hgb_detrended_ld_median_recal",
+    "run_at": "2026-10-12T10:06:22+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 40.85145450916089,
+    "mae": 30.62403866822546,
+    "mdape_pct": 27.433297564537163,
+    "median_bias_pct": -6.131745068089285,
+    "aggregate_bias_pct": -9.08562405208425,
+    "rmse_log": 0.6998818116875772,
+    "r2_log": 0.3351345879260813,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 86.5269908222347,
+    "mape_dq_max_pct": 164.67495647223564,
+    "meta": {
+      "base_model": "hgb_detrended_ld_median",
+      "loss": "quantile 0.5 on log1p",
+      "params": {
+        "learning_rate": 0.05,
+        "max_iter": 300,
+        "max_leaf_nodes": 255,
+        "min_samples_leaf": 20,
+        "l2_regularization": 0.0,
+        "min_frequency": 30
+      },
+      "tuning": "RandomizedSearchCV, 3-fold expanding window inside the fit window (rows before 2025-01-01), median-loss finalist of the family",
+      "fit_period": "2022-01-01..2024-12-31",
+      "eval_period": "2025",
+      "neighbourhood": true,
+      "recalibrated": true,
+      "recal_factor": 0.9960898217942863,
+      "behaviour": "extrapolates",
+      "pseudo_test_wape": {
+        "2023": 37.37549770504059,
+        "2024": 41.10200609281614
+      }
+    }
+  }
+]

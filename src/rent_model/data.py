@@ -6,19 +6,22 @@ import pandas as pd
 from . import config
 
 
-def load_clean(path=config.DATA_PATH, check=True):
+def load_clean(path=config.DATA_PATH, check=True, keep_lots=False):
     """Return the cleaned DataFrame used by the EDA notebook.
 
     Steps, in the order of the notebook: duplicates first (while building_name and the lot numbers
     are still present), NaN fills, drop of building_name and lot numbers, drop of missing year_built,
     type fixes, removal of the partial month (contract_month >= 2026-01-01), year_built range
     filter and floor filter.
+
+    `keep_lots=True` keeps `main_lot_number` and `sub_lot_number` (never features): they are only used to
+    build the unit key of the repeat-vs-new diagnostic. The rows are the same either way.
     """
     df = pd.read_csv(Path(path))
     df = df.drop_duplicates()
 
     df['legal_dong_name'] = df['legal_dong_name'].fillna('Unknown')
-    df = df.drop(['building_name', 'main_lot_number', 'sub_lot_number'], axis=1)
+    df = df.drop(['building_name'] + ([] if keep_lots else ['main_lot_number', 'sub_lot_number']), axis=1)
     df['lot_type_code'] = df['lot_type_code'].fillna(0.0)
     df['lot_type'] = df['lot_type'].fillna('No lot type')
     df['floor_reported'] = df['floor'].notna()
