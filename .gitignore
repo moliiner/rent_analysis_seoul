@@ -2,3 +2,6 @@ reports/predictions/
 __pycache__/
 .ipynb_checkpoints/
 .pytest_cache/
+.venv/
+.idea/
+.DS_Store

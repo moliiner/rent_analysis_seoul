@@ -18,6 +18,7 @@ FIGURES_DIR = REPORTS_DIR / 'figures'
 TRAIN_START = pd.Timestamp('2022-01-01')
 TRAIN_END = pd.Timestamp('2024-12-31')
 TEST_YEAR = 2025
+TRAIN_LAST_MONTH = pd.Timestamp(TRAIN_END.year, TRAIN_END.month, 1)      # 2024-12-01: last month of the TRAIN index
 TEST_START = pd.Timestamp(f'{TEST_YEAR}-01-01')
 TEST_END = pd.Timestamp(f'{TEST_YEAR}-12-31')
 N_CV_SPLITS = 3

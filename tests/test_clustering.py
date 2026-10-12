@@ -1,9 +1,8 @@
 import numpy as np
-import pandas as pd
 import pytest
 
 from rent_model import config
-from rent_model.clustering import (CLUSTER_COLUMN, DESCRIPTORS, BoostedWithClusters, ClusterLabeler,
+from rent_model.clustering import (CLUSTER_COLUMN, DESCRIPTORS, BoostedWithClusters,
                                    ClusterMedian, StructuralKMeans, build_ridge_kmeans_pipeline,
                                    describe_clusters, name_clusters, select_k)
 from rent_model.features import build_features, build_target, forbidden_columns

@@ -169,3 +169,31 @@ def test_model_notebook_uses_the_temporal_split_and_no_random_split(path):
         assert re.search(r'hedonic_index\([^)]*last_month=', code), f'{path.name}: the TRAIN-only index must use last_month'
     else:
         assert 'temporal_split(' in code, f'{path.name}: temporal_split is never called'
+
+
+# ---------------------------------------------------------------------------------------------
+# Headline answer of the README and the model card
+# ---------------------------------------------------------------------------------------------
+MODEL_CARD = config.ROOT / 'docs' / 'MODEL_CARD.md'
+
+
+def test_readme_headline_wape_matches_the_chosen_models(board, readme):
+    chosen = board[board['valid'] & board['is_chosen_model']].set_index('track')
+    m = re.search(r'deposit of a Jeonse contract \(2025 WAPE (\d+\.\d\d)%\) and the monthly rent of a Wolse contract \(2025 WAPE (\d+\.\d\d)%\)', readme)
+    assert m, 'headline answer not found at the top of the README'
+    assert (m.group(1), m.group(2)) == (f2(chosen.loc['jeonse', 'wape_pct']), f2(chosen.loc['wolse', 'wape_pct']))
+    assert readme.index('How much will a tenant pay in Seoul?') < readme.index('## Key results')
+    assert 'extrapolation scenario' in readme.split('## Key results')[0] and '2025 was inspected in earlier iterations' in readme.split('## Key results')[0]
+
+
+def test_model_card_metrics_match_the_leaderboard(board):
+    if not MODEL_CARD.exists():
+        pytest.skip('docs/MODEL_CARD.md is missing')
+    text = MODEL_CARD.read_text(encoding='utf-8')
+    chosen = board[board['valid'] & board['is_chosen_model']].set_index('track')
+    row = re.search(r'\| WAPE 2025 \(%\) \| (\d+\.\d\d) \| (\d+\.\d\d) \|', text)
+    assert row and (row.group(1), row.group(2)) == (f2(chosen.loc['jeonse', 'wape_pct']), f2(chosen.loc['wolse', 'wape_pct']))
+    assert f"`{chosen.loc['jeonse', 'model_id']}` for Jeonse" in text and f"`{chosen.loc['wolse', 'model_id']}` for Wolse" in text
+    for section in ('Intended use', 'Out-of-scope use', 'Training and evaluation protocol', 'Known failure modes', 'Uncertainty'):
+        assert f'## {section}' in text
+    assert 'individual legal or financial decisions' in text.lower() and '2025 was inspected in earlier iterations' in text

@@ -2,6 +2,12 @@
 
 End-to-end data science project on 387,326 cleaned Seoul rental contracts (2022-2025): leakage-safe EDA and modeling of **Jeonse** (deposit-only) and **Wolse** (monthly rent) contracts, 42 valid models compared per track (baselines, linear, forests, boosting, K-Means, hierarchical clustering, Gaussian mixtures, time series and a hybrid), a quality-adjusted price index, and clearly labelled 2026-2028 extrapolation scenarios.
 
+> **How much will a tenant pay in Seoul?** It depends on the contract type. The chosen models predict the deposit of a Jeonse contract (2025 WAPE 14.14%) and the monthly rent of a Wolse contract (2025 WAPE 40.80%); the annual cost of a Wolse contract is 12 x the monthly rent. Units are 10,000 KRW (1,000 = 10 million KRW).
+>
+> **Worked example (Jeonse, extrapolation scenario for 2026, not a forecast):** a 60 m2 apartment in Gangnam-gu has a base deposit of 77,221.8 (10,000 KRW), about 772.2 million KRW, within an index band of 71,759.5 to 83,141.4; a single contract of that profile has an 80% interval of 60,656.1 to 98,311.6 (10,000 KRW).
+>
+> **Assumptions and disclosure:** the representative contract has the median floor (8) and median building age (24 years) of the contracts of that district and building type, contract type New and no renewal right. 2025 was inspected in earlier iterations of this project; the final model selection used pseudo-tests (fit before 2023 and before 2024) and 2025 is reported once, after the choice.
+
 ## Key results
 
 - **Selected model for each track** (chosen on the 2023-2024 pseudo-tests with settings tuned inside each fit window, then evaluated once on 2025): `hgb_detrended_ld_median_recal` for Jeonse (WAPE 14.14%) and `hgb_detrended_ld_median` for Wolse (WAPE 40.80%). Requiring extrapolation costs 0.0000 (Jeonse) and 0.0000 (Wolse) WAPE points against the unconstrained choice, which is the same model in each track and extrapolates.
@@ -24,19 +30,22 @@ How much will a tenant pay in Seoul in the coming years? The answer differs by c
 - **Sample design:** 400,000 rows x 23 columns, with about 100,000 records per year (2022-2025). It is a sample and **not proportional to the market**, so counts per month or per year are not market volume.
 - **Units:** money columns are in units of 10,000 KRW (a deposit of 16,000 means 160,000,000 KRW); area is in m2.
 - **Contract type:** `lease_type` is `Jeonse (deposit only)` or `Monthly rent`; it was inferred from `monthly_rent == 0` in 2022, 2024 and 2025.
+- **File and source:** `data/Seoul_Rentals_2022_2025.csv` is about 61 MB (GitHub warns above 50 MB). It is the project sample of the data published by the Seoul Open Data Plaza (dataset OA-21276, <https://data.seoul.go.kr/dataList/OA-21276/S/1/datasetView.do>), which offers the original files by year. How the sample of this repository was drawn is not documented here, so a fresh download would not reproduce the file exactly. This repository does not restate the terms of use of the data: check them on the source page before reusing it.
 
 **Cleaning (documented in `Notebook.ipynb`; every dropped row is counted):**
 
 | Step | Rows dropped | Rows left |
 |---|---:|---:|
 | Raw file | - | 400,000 |
-| Exact duplicates | 10 | |
+| Exact duplicates | <re.Match object; span=(0, 77), match='Exact duplicate rows remaining after load_clean: > | |
 | Missing `year_built` (12,650 missing in the raw file) | | 387,342 |
 | Partial month (contracts from 2026-01-01) | 11 | 387,331 |
 | Impossible `year_built` (outside 1850-2026) | 4 | 387,327 |
 | Impossible `floor` (above 100; one row with floor 302) | 1 | 387,326 |
 
 In total 12,674 rows (3.17%) were dropped and 96.83% were retained: 176,783 Jeonse and 210,543 Wolse contracts. Price and area outliers are real market values and are **kept** (log transforms are used instead); only impossible values were removed, with domain-based ranges.
+
+After the cleaning, 24 exact duplicate rows (0.0062% of the rows) remain: they differ only in the columns dropped by the cleaning (the main and sub lot numbers, and `building_name` in 2023; with the lot numbers kept, 0 exact duplicates remain). They are kept.
 
 ## Methodology
 
@@ -192,12 +201,12 @@ The gain over the carry-forward is clear on 2025 but not in every pseudo-test wi
 
 ## Reproducibility
 
-- **Environment:** Python 3.13.7; packages in `requirements.txt` (`pip install -r requirements.txt`). LightGBM and SHAP are not used; scikit-learn is the only boosting implementation.
+- **Environment:** Python 3.13.7; packages in `requirements.txt` (lower bounds and upper caps) and the exact versions of this run in `constraints.txt` (`pip install -r requirements.txt -c constraints.txt`). LightGBM and SHAP are not used; scikit-learn is the only boosting implementation.
 - **Random seed:** `RANDOM_SEED = 42`, defined only in `src/rent_model/config.py`.
-- **Tests:** `pytest -q` (191 tests: data cleaning, splits, leakage, metrics and every model module).
+- **Tests:** `pytest -q` (198 tests: data cleaning, splits, leakage, metrics and every model module).
 - **Run everything (tests and notebooks 00 to 08, 10, 11, 12, 09 and 13, in that order):** `bash scripts/run_all.sh` (or `make all`). Each notebook can also be run with `python -m nbconvert --to notebook --execute --inplace notebooks/<name>.ipynb`. The notebooks must run in that order: later ones read the runs saved by earlier ones (notebook 10 writes the median-loss runs, notebook 11 the neighbourhood-aware runs and `pseudotest_v2_*.json` that notebooks 12 and 09 read, notebook 12 the `_conformal` runs that notebook 09 reads; notebook 11 runs for hours, each of its twelve tunings takes between 529 and 963 seconds). Re-running a notebook appends a new run to `reports/metrics/{track}__{model_id}.json`; every table reads the last run. `reports/predictions/` (parquet) is generated by the notebooks and not versioned.
 - **Optional app:** `pip install streamlit` and `streamlit run app/streamlit_app.py` to choose a district, building type and area and see the scenarios (it refits the chosen models locally, about a minute the first time; no network needed).
-- **CI:** `.github/workflows/ci.yml` installs the requirements and runs `pytest -q` only.
+- **CI:** `.github/workflows/ci.yml` installs the requirements with `constraints.txt`, runs `pyflakes` (`python -m pyflakes src tests app`) and `pytest -q`; the notebooks are not executed in CI.
 
 ## Repository map
 
@@ -226,7 +235,9 @@ tests/                         pytest suite
 reports/metrics/               one JSON per model and track, ts_index_*.json, pseudotest_*.json, pseudotest_v2_*.json, leaderboard.csv
 reports/figures/               PNG charts
 app/streamlit_app.py           optional scenario explorer
-scripts/run_all.sh, Makefile   run the tests and the notebooks in order
-.github/workflows/ci.yml       CI (tests only)
+constraints.txt                exact package versions of the run (Python 3.13.7)
+docs/MODEL_CARD.md             model card: intended use, protocol, metrics, failure modes
+scripts/run_all.sh, Makefile   run pyflakes, the tests and the notebooks in order
+.github/workflows/ci.yml       CI (pyflakes and tests)
 CLAUDE.md                      project conventions and modeling protocol
 ```

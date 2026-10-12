@@ -8,6 +8,7 @@ install:
 	$(PYTHON) -m pip install -r requirements.txt
 
 test:
+	$(PYTHON) -m pyflakes src tests app
 	$(PYTHON) -m pytest -q
 
 # Equivalent to: bash scripts/run_all.sh (without the tests)

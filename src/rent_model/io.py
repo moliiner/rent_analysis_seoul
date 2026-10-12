@@ -12,6 +12,12 @@ from .metrics import all_metrics
 _MODEL_ID = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]*$')
 
 
+def last_run(track, model_id, metrics_dir=None):
+    """Last saved run (a dict with the metrics and the meta) of a model of one track."""
+    metrics_dir = config.METRICS_DIR if metrics_dir is None else metrics_dir
+    return json.loads((metrics_dir / f'{track}__{model_id}.json').read_text(encoding='utf-8'))[-1]
+
+
 def save_run(track, model_id, y_true, y_pred, meta=None, context=None, reports_dir=None):
     """Save one model run for one track.
 

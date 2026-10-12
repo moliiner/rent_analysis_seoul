@@ -13,9 +13,9 @@ import pandas as pd
 from . import config
 from .boosting import BoostedModel, required_columns
 from .linear import build_pipeline as build_linear_pipeline
-from .ts_index import MONTH_COLUMN, forecast, hedonic_index, log_index
+from .ts_index import forecast, hedonic_index, log_index
 
-TRAIN_LAST_MONTH = pd.Timestamp(config.TRAIN_END.year, config.TRAIN_END.month, 1)
+TRAIN_LAST_MONTH = config.TRAIN_LAST_MONTH
 LOG_BASE = np.log(100.0)
 STRUCTURE_KINDS = ('ridge', 'hgb')
 

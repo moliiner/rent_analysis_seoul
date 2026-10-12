@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs the test suite and then every modeling notebook in order (00 .. 08, 10, 11, 12, 09, 13).
+# Runs the linter, the test suite and then every modeling notebook in the dependency order (00 .. 08, 10, 11, 12, 09, 13).
 # Usage:  bash scripts/run_all.sh            run everything
 #         DRY_RUN=1 bash scripts/run_all.sh  only print the commands
 # Notebooks 10, 11 and 12 run before 09: they write the pseudo-test selections and the median-loss / neighbourhood-aware runs that 09 reads (11 takes hours).
@@ -35,6 +35,7 @@ run() {
   fi
 }
 
+run "$PYTHON" -m pyflakes src tests app
 run "$PYTHON" -m pytest -q
 for notebook in "${NOTEBOOKS[@]}"; do
   run "$PYTHON" -m nbconvert --to notebook --execute --inplace "$notebook" \

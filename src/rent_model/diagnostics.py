@@ -8,7 +8,36 @@ unit when its key appears among the rows of the fit window; the flag only looks 
 import numpy as np
 import pandas as pd
 
+from .forest import to_original
 from .metrics import wape
+
+
+def bias_table(y_true, predictions, quarters, kind):
+    """Bias of each model by quarter (percent). `predictions` maps model_id -> predicted values.
+
+    kind='median': median of (prediction - actual) / actual; kind='aggregate': (sum of predictions - sum of actuals) / sum of actuals."""
+    out = {}
+    for model_id, pred in predictions.items():
+        frame = pd.DataFrame({'y': np.asarray(y_true, dtype=float), 'p': np.asarray(pred, dtype=float), 'q': np.asarray(quarters)})
+        if kind == 'median':
+            out[model_id] = frame.groupby('q').apply(lambda g: np.median((g['p'] - g['y']) / g['y']) * 100, include_groups=False)
+        else:
+            out[model_id] = frame.groupby('q').apply(lambda g: (g['p'].sum() - g['y'].sum()) / g['y'].sum() * 100, include_groups=False)
+    return pd.DataFrame(out)
+
+
+def partial_dependence(model, X, column, columns, n_grid=15):
+    """Mean prediction (original scale, 10,000 KRW) over a grid of `column` (5th to 95th percentile of X).
+
+    `columns` are the feature columns the model needs; the other features keep their values."""
+    grid = np.unique(np.quantile(X[column], np.linspace(0.05, 0.95, n_grid)))
+    values = []
+    for g in grid:
+        Xg = X[columns].copy()
+        Xg[column] = g
+        values.append(to_original(model.predict(Xg)).mean())
+    return grid, np.array(values)
+
 
 UNIT_COLUMNS = ['district_name', 'legal_dong_name', 'main_lot_number', 'sub_lot_number', 'building_type',
                 'leased_area_sqm', 'floor', 'year_built']

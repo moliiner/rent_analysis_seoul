@@ -163,5 +163,60 @@
         "0.95": 0.9339053939953267
       }
     }
+  },
+  {
+    "track": "wolse",
+    "model_id": "hgb_detrended_ld_median_conformal",
+    "run_at": "2026-10-12T13:36:11+00:00",
+    "random_seed": 42,
+    "n": 57829,
+    "wape_pct": 40.79503944625678,
+    "mae": 30.58174746737095,
+    "mdape_pct": 27.338486514744393,
+    "median_bias_pct": -5.763262631453228,
+    "aggregate_bias_pct": -8.728737149277386,
+    "rmse_log": 0.7005291611534795,
+    "r2_log": 0.33390409640689755,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 86.81464010569172,
+    "mape_dq_max_pct": 165.27609479372495,
+    "meta": {
+      "base_model": "hgb_detrended_ld_median",
+      "method": "split conformal on log1p, absolute residuals, finite-sample quantile",
+      "version": "scaled",
+      "calibration_window": "2024-07-01 to 2024-12-01",
+      "calibration_rows": 26616,
+      "radius_log": {
+        "0.8": 0.9753620609563207,
+        "0.95": 2.242946461414306
+      },
+      "radius_log_unscaled": {
+        "0.8": 0.7461359792815925,
+        "0.95": 1.6671017294535622
+      },
+      "radius_log_scaled": {
+        "0.8": 0.9753620609563207,
+        "0.95": 2.242946461414306
+      },
+      "sigma_building_type": {
+        "Apartment": 1.0022875394947763,
+        "Detached / Multi-household house": 0.5051039688291235,
+        "Officetel": 0.681851891955419,
+        "Row house / Villa (multi-unit)": 0.8014731693659161,
+        "None": 0.8065719833538295
+      },
+      "coverage_2025": {
+        "0.8": 0.8095246329696173,
+        "0.95": 0.954192533158104
+      },
+      "mean_width_2025": {
+        "0.8": 122.45675412453886,
+        "0.95": 449.00633334751427
+      },
+      "coverage_pseudo_tests": {
+        "0.8": 0.7793802894338956,
+        "0.95": 0.9339053939953267
+      }
+    }
   }
 ]

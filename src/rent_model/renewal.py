@@ -14,7 +14,6 @@ import pandas as pd
 from . import config
 from .boosting import BoostedModel, required_columns
 from .features import build_features
-from .forest import to_original  # noqa: F401  (re-exported for convenience)
 from .metrics import wape
 
 SCOPE = 'renewal_only'

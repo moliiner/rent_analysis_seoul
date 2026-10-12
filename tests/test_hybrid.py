@@ -6,8 +6,7 @@ from rent_model import config
 from rent_model.features import build_features, build_target
 from rent_model.hybrid import (HybridPredictor, LOG_BASE, StructureModel, TRAIN_LAST_MONTH, adjust_target, combine,
                                forecast_adjustment, index_adjustment, oracle_index, train_index)
-from rent_model.splits import temporal_split
-from rent_model.ts_index import hedonic_index, log_index
+from rent_model.ts_index import hedonic_index
 from test_ts_index import synthetic_market
 
 FAST_HGB = dict(learning_rate=0.1, max_iter=40, max_leaf_nodes=15, min_samples_leaf=20)

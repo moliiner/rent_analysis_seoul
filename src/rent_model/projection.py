@@ -29,6 +29,17 @@ def chosen_models(leaderboard_path=LEADERBOARD_PATH):
     return dict(zip(chosen['track'], chosen['model_id']))
 
 
+def comparable_contracts(track_df, track, district, building_type, area_sqm, contract_type, year=None):
+    """(number of contracts, median target in 10,000 KRW) of the contracts of the latest year of the data with the
+    same district, building type and contract type and an area within 20% of `area_sqm`."""
+    year = int(track_df['contract_date'].dt.year.max()) if year is None else year
+    rows = track_df[(track_df['district_name'] == district) & (track_df['building_type'] == building_type)
+                    & (track_df['contract_date'].dt.year == year) & (track_df['contract_type'] == contract_type)
+                    & track_df['leased_area_sqm'].between(area_sqm * 0.8, area_sqm * 1.2)]
+    median = rows[config.TRACKS[track]['target']].median() if len(rows) else float('nan')
+    return int(len(rows)), median
+
+
 class ScenarioModel:
     """Chosen model of one track, refit on all months, plus the index forecast used for the bands."""
 

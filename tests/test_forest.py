@@ -4,7 +4,7 @@ import pytest
 
 from rent_model import config
 from rent_model.features import build_features, build_target, forbidden_columns
-from rent_model.forest import (DetrendedForest, PARAM_DISTRIBUTIONS, feature_columns, fit_predict,
+from rent_model.forest import (PARAM_DISTRIBUTIONS, feature_columns, fit_predict,
                                make_model, tune)
 from rent_model.splits import expanding_window_folds, temporal_split
 

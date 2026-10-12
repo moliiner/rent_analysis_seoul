@@ -17,7 +17,7 @@ import streamlit as st
 from rent_model import config
 from rent_model.compare import annual_cash_cost
 from rent_model.data import load_clean
-from rent_model.projection import FUTURE, LEADERBOARD_PATH, fit_scenario_model
+from rent_model.projection import FUTURE, LEADERBOARD_PATH, comparable_contracts, fit_scenario_model
 
 TRACK_LABELS = {'jeonse': 'Jeonse (deposit)', 'wolse': 'Wolse (monthly rent)'}
 
@@ -38,13 +38,6 @@ def load_models():
 @st.cache_data
 def load_leaderboard():
     return pd.read_csv(LEADERBOARD_PATH)
-
-
-def observed_median(track_df, target, district, building_type, area_sqm, contract_type):
-    rows = track_df[(track_df['district_name'] == district) & (track_df['building_type'] == building_type)
-                    & (track_df['contract_date'].dt.year == 2025) & (track_df['contract_type'] == contract_type)
-                    & track_df['leased_area_sqm'].between(area_sqm * 0.8, area_sqm * 1.2)]
-    return (rows[target].median() if len(rows) else float('nan')), len(rows)
 
 
 st.title('Seoul rent scenarios 2026-2028')
@@ -82,8 +75,7 @@ for column, (track, scenario) in zip(columns, models.items()):
         st.dataframe(annual.round(1))
         chart = projection[['low', 'base', 'high']] * factor
         st.line_chart(chart, y_label='10,000 KRW' + (' per year' if track == 'wolse' else ''))
-        target = config.TRACKS[track]['target']
-        median, n_comp = observed_median(scenario.track_df, target, district, building_type, float(area), profile['contract_type'])
+        n_comp, median = comparable_contracts(scenario.track_df, track, district, building_type, float(area), profile['contract_type'], year=2025)
         st.caption(f"Observed 2025 median of comparable contracts (same district, type and contract type, area within 20%): "
                    f"{median:,.1f} (10,000 KRW{' per month' if track == 'wolse' else ''}), {n_comp} contracts. "
                    f"Rows of the district and building type in 2022-2025: {n_group}.")
