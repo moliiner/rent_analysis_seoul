@@ -128,7 +128,7 @@ def load_runs(metrics_dir=None):
     rows, behaviours = [], {}
     for path in sorted(metrics_dir.glob('*__*.json')):
         track, model_id = path.stem.split('__', 1)
-        if track not in config.TRACKS:
+        if track not in config.TRACKS or model_id.endswith('_conformal'):      # a `_conformal` run holds the intervals of a model that is already listed
             continue
         run = json.loads(path.read_text(encoding='utf-8'))[-1]
         kind, can = extrapolation_kind(model_id)

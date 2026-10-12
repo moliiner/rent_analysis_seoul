@@ -9,6 +9,7 @@ End-to-end data science project on 387,326 cleaned Seoul rental contracts (2022-
 - **Components, on 2025 (notebook 11).** For the detrended model the grouped neighbourhood changes the WAPE by -2.8956 points in Jeonse (17.6481% to 14.7525%) and -1.4888 in Wolse; the median loss on top of it changes it by -0.0159 (Jeonse) and -3.0454 (Wolse); the recalibration by -0.6000 and 0.0564. The neighbourhood is the main gain in Jeonse and the median loss (the log of the Wolse rent is left-skewed, skewness -0.4006) is the main gain in Wolse.
 - **Raw monthly medians mislead.** The quality-adjusted index ends 2025 at 103.96 (Jeonse) and 95.28 (Wolse), while the raw monthly median rebased to 2022-01 reaches 142.58 and 110.00: most of the apparent rise is a change in the sample mix.
 - **Supervised beats unsupervised.** Boosting and the hybrid (structure model plus index) are the best families in both tracks; unsupervised features add little or nothing to boosting, and pure unsupervised predictors are the weakest family.
+- **Prediction intervals (notebook 12).** Split conformal intervals for a single contract (calibrated on the last 6 months of the fit window, on the `log1p` scale) cover 0.8186 and 0.9595 of the 2025 contracts in Jeonse and 0.8095 and 0.9542 in Wolse at the 80% and 95% levels, close to nominal. Coverage is not uniform: Jeonse detached houses are covered 0.5582 at the 80% level, and the Wolse pseudo-test of 2024 covers only 0.7504 (unscaled) because the error scale grew after the calibration window. The Wolse intervals are wide (median relative width 1.6647 of the prediction for the 80% unscaled interval).
 - **The 2026-2028 numbers are extrapolation scenarios, not forecasts**: they extrapolate 48 months of data. Both selected models extrapolate (they are not level-persistence models).
 
 ![Leaderboard](reports/figures/09_leaderboard.png)
@@ -155,6 +156,8 @@ For example, the 2026 base for an Apartment of 60 m2 in Gangnam-gu is 772.2 mill
 
 ![Scenarios](reports/figures/09_projection_scenarios.png)
 
+**Contract-level interval next to the index band.** The low/high scenarios above describe the uncertainty of the price level only. Notebook 09 adds the conformal interval of a single contract (calibration window 2025-07-01 to 2025-12-01) and an assumptions table; for the 60 m2 apartment in Gangnam-gu the Jeonse base of 2026 is 77,221.7735, the index band 71,759.4521 to 83,141.4203 and the 80% interval of one contract 60,656.1125 to 98,311.5719. The two bands are not added and neither is a forecast interval.
+
 ## Limitations and what I would do differently
 
 - **Only 48 months of data.** Trends and seasonality are barely identifiable; the 12-month index forecast errors rest on a handful of overlapping origins, and the 2026-2028 results are extrapolations whose bands are wide, in particular for Wolse.
@@ -162,6 +165,7 @@ For example, the 2026 base for an Apartment of 60 m2 in Gangnam-gu is 772.2 mill
 - **Small tuning budget.** Each of the twelve searches samples 12 candidates of the grid, and the best `max_leaf_nodes` is the largest value of the grid in most of them; a wider search may improve the neighbourhood-aware models.
 - **The Jeonse scenario mixes two trends.** The selected Jeonse model adds back a log-linear trend of 8.17% per year fit on 48 months, while the band comes from a flat (naive) index forecast; the base path rises through the band. Treat the Jeonse base as an upper-trend extrapolation.
 - **Row bootstrap understates uncertainty.** With month or district blocks several differences between close candidates become ties (for example the two Wolse models selected between in notebook 11, difference 0.0073 points), and the selection uses the largest of the three standard errors.
+- **Conformal intervals hold on average, not by group or in every year.** The guarantee needs the calibration window to resemble the evaluation year: it did in 2025 (coverage 0.8127 and 0.8057 at the 80% level, unscaled) but not in the Wolse pseudo-test of 2024 (0.7504), and a single radius does not fit groups with different error scales (Jeonse detached houses 0.5265 unscaled and 0.5582 scaled in 2025). The building-type scaling helps some groups and hurts others.
 - **The sample is not proportional to the market.** Absolute volumes cannot be inferred, and the index only partly corrects composition (neighbourhood and building quality are not controlled).
 - **No macro variables.** Interest rates, policy changes, supply, and price indices of the sale market would be the first additions; they are the main drivers of Jeonse deposits.
 - **Trees cannot extrapolate.** The most accurate models are therefore not the ones suitable for projection; the hybrid and detrended designs are a compromise that costs accuracy.
@@ -172,8 +176,8 @@ For example, the 2026 base for an Apartment of 60 m2 in Gangnam-gu is 772.2 mill
 
 - **Environment:** Python 3.13.7; packages in `requirements.txt` (`pip install -r requirements.txt`). LightGBM and SHAP are not used; scikit-learn is the only boosting implementation.
 - **Random seed:** `RANDOM_SEED = 42`, defined only in `src/rent_model/config.py`.
-- **Tests:** `pytest -q` (173 tests: data cleaning, splits, leakage, metrics and every model module).
-- **Run everything (tests and notebooks 00 to 08, 10, 11 and 09, in that order):** `bash scripts/run_all.sh` (or `make all`). Each notebook can also be run with `python -m nbconvert --to notebook --execute --inplace notebooks/<name>.ipynb`. The notebooks must run in that order: later ones read the runs saved by earlier ones (notebook 10 writes the median-loss runs, notebook 11 the neighbourhood-aware runs and `pseudotest_v2_*.json` that notebook 09 reads; notebook 11 runs for hours, each of its twelve tunings takes between 529 and 963 seconds). Re-running a notebook appends a new run to `reports/metrics/{track}__{model_id}.json`; every table reads the last run. `reports/predictions/` (parquet) is generated by the notebooks and not versioned.
+- **Tests:** `pytest -q` (183 tests: data cleaning, splits, leakage, metrics and every model module).
+- **Run everything (tests and notebooks 00 to 08, 10, 11, 12 and 09, in that order):** `bash scripts/run_all.sh` (or `make all`). Each notebook can also be run with `python -m nbconvert --to notebook --execute --inplace notebooks/<name>.ipynb`. The notebooks must run in that order: later ones read the runs saved by earlier ones (notebook 10 writes the median-loss runs, notebook 11 the neighbourhood-aware runs and `pseudotest_v2_*.json` that notebooks 12 and 09 read, notebook 12 the `_conformal` runs that notebook 09 reads; notebook 11 runs for hours, each of its twelve tunings takes between 529 and 963 seconds). Re-running a notebook appends a new run to `reports/metrics/{track}__{model_id}.json`; every table reads the last run. `reports/predictions/` (parquet) is generated by the notebooks and not versioned.
 - **Optional app:** `pip install streamlit` and `streamlit run app/streamlit_app.py` to choose a district, building type and area and see the scenarios (it refits the chosen models locally, about a minute the first time; no network needed).
 - **CI:** `.github/workflows/ci.yml` installs the requirements and runs `pytest -q` only.
 
@@ -193,11 +197,12 @@ notebooks/
   07_price_index_forecasting.ipynb   hedonic index and its forecast
   08_hybrid_model.ipynb        structure model + forecasted index
   10_selection_robustness.ipynb   pseudo-tests, block bootstrap, median-loss runs, bias by year
+  12_uncertainty.ipynb         split conformal intervals of the chosen models, coverage by group and under shift
   11_neighbourhood_trend_models.ipynb   grouped neighbourhood, tuning per window, recalibration, learning curve, repeat units, price tiers
   09_model_comparison_projection.ipynb   leaderboard, selection, 2026-2028 scenarios
 src/rent_model/                config, data, features, splits, metrics, io, baselines, linear,
                                forest, boosting, clustering, unsupervised, ts_index, hybrid,
-                               recipes, pseudotest, diagnostics, compare, projection
+                               recipes, pseudotest, diagnostics, conformal, compare, projection
 tests/                         pytest suite
 reports/metrics/               one JSON per model and track, ts_index_*.json, pseudotest_*.json, pseudotest_v2_*.json, leaderboard.csv
 reports/figures/               PNG charts

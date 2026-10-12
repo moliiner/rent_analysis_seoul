@@ -1,0 +1,167 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "hgb_detrended_ld_median_recal_conformal",
+    "run_at": "2026-10-12T10:42:18+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 14.136597239958704,
+    "mae": 6371.477234055823,
+    "mdape_pct": 10.697798468670438,
+    "median_bias_pct": 2.34593651214987,
+    "aggregate_bias_pct": 1.073210445034393,
+    "rmse_log": 0.2620732587338191,
+    "r2_log": 0.8796473532341422,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 19.55024748493831,
+    "mape_dq_max_pct": 50.77089331113353,
+    "meta": {
+      "base_model": "hgb_detrended_ld_median_recal",
+      "method": "split conformal on log1p, absolute residuals, finite-sample quantile",
+      "version": "scaled",
+      "calibration_window": "2024-07-01 to 2024-12-01",
+      "calibration_rows": 19330,
+      "radius_log": {
+        "0.8": 0.4708202335375753,
+        "0.95": 1.0523223176819283
+      },
+      "radius_log_unscaled": {
+        "0.8": 0.24285985289986733,
+        "0.95": 0.5459983431180202
+      },
+      "radius_log_scaled": {
+        "0.8": 0.4708202335375753,
+        "0.95": 1.0523223176819283
+      },
+      "sigma_building_type": {
+        "Apartment": 0.5931935862475545,
+        "Detached / Multi-household house": 0.5607273929038878,
+        "Officetel": 0.3903710509924819,
+        "Row house / Villa (multi-unit)": 0.43488494577735626,
+        "None": 0.7256425979460842
+      },
+      "coverage_2025": {
+        "0.8": 0.8186371424805589,
+        "0.95": 0.9594833267431132
+      },
+      "mean_width_2025": {
+        "0.8": 24480.39142601201,
+        "0.95": 57402.81882804292
+      },
+      "coverage_pseudo_tests": {
+        "0.8": 0.8301871872211114,
+        "0.95": 0.9553891167067702
+      }
+    }
+  },
+  {
+    "track": "jeonse",
+    "model_id": "hgb_detrended_ld_median_recal_conformal",
+    "run_at": "2026-10-12T10:48:16+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 14.136597239958704,
+    "mae": 6371.477234055823,
+    "mdape_pct": 10.697798468670438,
+    "median_bias_pct": 2.34593651214987,
+    "aggregate_bias_pct": 1.073210445034393,
+    "rmse_log": 0.2620732587338191,
+    "r2_log": 0.8796473532341422,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 19.55024748493831,
+    "mape_dq_max_pct": 50.77089331113353,
+    "meta": {
+      "base_model": "hgb_detrended_ld_median_recal",
+      "method": "split conformal on log1p, absolute residuals, finite-sample quantile",
+      "version": "scaled",
+      "calibration_window": "2024-07-01 to 2024-12-01",
+      "calibration_rows": 19330,
+      "radius_log": {
+        "0.8": 0.4708202335375753,
+        "0.95": 1.0523223176819283
+      },
+      "radius_log_unscaled": {
+        "0.8": 0.24285985289986733,
+        "0.95": 0.5459983431180202
+      },
+      "radius_log_scaled": {
+        "0.8": 0.4708202335375753,
+        "0.95": 1.0523223176819283
+      },
+      "sigma_building_type": {
+        "Apartment": 0.5931935862475545,
+        "Detached / Multi-household house": 0.5607273929038878,
+        "Officetel": 0.3903710509924819,
+        "Row house / Villa (multi-unit)": 0.43488494577735626,
+        "None": 0.7256425979460842
+      },
+      "coverage_2025": {
+        "0.8": 0.8186371424805589,
+        "0.95": 0.9594833267431132
+      },
+      "mean_width_2025": {
+        "0.8": 24480.39142601201,
+        "0.95": 57402.81882804292
+      },
+      "coverage_pseudo_tests": {
+        "0.8": 0.8301871872211114,
+        "0.95": 0.9553891167067702
+      }
+    }
+  },
+  {
+    "track": "jeonse",
+    "model_id": "hgb_detrended_ld_median_recal_conformal",
+    "run_at": "2026-10-12T11:01:05+00:00",
+    "random_seed": 42,
+    "n": 37935,
+    "wape_pct": 14.136597239958704,
+    "mae": 6371.477234055823,
+    "mdape_pct": 10.697798468670438,
+    "median_bias_pct": 2.34593651214987,
+    "aggregate_bias_pct": 1.073210445034393,
+    "rmse_log": 0.2620732587338191,
+    "r2_log": 0.8796473532341422,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 19.55024748493831,
+    "mape_dq_max_pct": 50.77089331113353,
+    "meta": {
+      "base_model": "hgb_detrended_ld_median_recal",
+      "method": "split conformal on log1p, absolute residuals, finite-sample quantile",
+      "version": "scaled",
+      "calibration_window": "2024-07-01 to 2024-12-01",
+      "calibration_rows": 19330,
+      "radius_log": {
+        "0.8": 0.4708202335375753,
+        "0.95": 1.0523223176819283
+      },
+      "radius_log_unscaled": {
+        "0.8": 0.24285985289986733,
+        "0.95": 0.5459983431180202
+      },
+      "radius_log_scaled": {
+        "0.8": 0.4708202335375753,
+        "0.95": 1.0523223176819283
+      },
+      "sigma_building_type": {
+        "Apartment": 0.5931935862475545,
+        "Detached / Multi-household house": 0.5607273929038878,
+        "Officetel": 0.3903710509924819,
+        "Row house / Villa (multi-unit)": 0.43488494577735626,
+        "None": 0.7256425979460842
+      },
+      "coverage_2025": {
+        "0.8": 0.8186371424805589,
+        "0.95": 0.9594833267431132
+      },
+      "mean_width_2025": {
+        "0.8": 24480.39142601201,
+        "0.95": 57402.81882804292
+      },
+      "coverage_pseudo_tests": {
+        "0.8": 0.8301871872211114,
+        "0.95": 0.9553891167067702
+      }
+    }
+  }
+]

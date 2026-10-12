@@ -42,3 +42,14 @@ def test_fold_boundaries_increase_in_time(clean_df, track):
 
     assert dates[folds[-1][1]].max() == dates.max()
     assert all(len(v) > 0 for _, v in folds)
+
+
+def test_window_folds_work_in_a_six_month_window():
+    import pandas as pd
+    from rent_model.splits import window_folds
+    frame = pd.DataFrame({'contract_date': pd.date_range('2023-01-01', periods=6, freq='MS').repeat(5)})
+    folds = window_folds(frame)
+    assert len(folds) == 3
+    months = frame['contract_date'].dt.month.to_numpy()
+    for train_pos, valid_pos in folds:
+        assert months[train_pos].max() < months[valid_pos].min()
