@@ -228,7 +228,7 @@ def adjusted_wape_scorer(estimator, X, y_adj):
 
 
 def tune_extended(variant, X, y, folds, n_iter=20, quantile=None, neighbourhood=False, scorer=None,
-                  distributions=None):
+                  distributions=None, extra_numeric=()):
     """RandomizedSearchCV over expanding-window folds for one finalist on its own target `y`.
 
     `y` is log1p(target) for a detrended model (the booster learns the residual of the trend fit
@@ -236,7 +236,7 @@ def tune_extended(variant, X, y, folds, n_iter=20, quantile=None, neighbourhood=
     and an `adj_log` column in X). Returns (best_params, cv_table sorted by mean score, n_fit_rows)."""
     distributions = EXTENDED_PARAM_DISTRIBUTIONS if distributions is None else distributions
     search = RandomizedSearchCV(
-        BoostedModel(variant=variant, quantile=quantile, neighbourhood=neighbourhood), distributions, n_iter=n_iter,
+        BoostedModel(variant=variant, quantile=quantile, neighbourhood=neighbourhood, extra_numeric=extra_numeric), distributions, n_iter=n_iter,
         cv=folds, scoring=scorer or wape_scorer, refit=False, n_jobs=1, random_state=config.RANDOM_SEED)
     search.fit(X, y)
     res = search.cv_results_

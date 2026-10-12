@@ -72,3 +72,8 @@ Portfolio project: exploratory data analysis of Jeonse and Monthly rent (Wolse) 
 10. Every model notebook ends by saving predictions and metrics under `reports/` (`reports/predictions/{track}__{model_id}.parquet`, `reports/metrics/{track}__{model_id}.json`), never by overwriting another model's files.
 
 Code lives in `src/rent_model/` (`config`, `data`, `features`, `splits`, `metrics`, `io`); `RANDOM_SEED = 42` is defined only in `config.py`. Run the tests with `pytest -q`.
+
+## Renewal-only study (explicit, isolated exception to rule 5 of the Modeling protocol)
+- `notebooks/13_renewal_study.ipynb` and `src/rent_model/renewal.py` form a **separate product**: "what will a tenant pay on a future renewal, given the current price?". They use `previous_deposit_10k_krw` / `previous_monthly_rent_10k_krw`, which rule 5 forbids for the main models. This is the only exception.
+- The previous columns never enter `features.py`, the main models, the main leaderboard or the market projection (tests check the main feature lists). Runs of the study carry `scope = "renewal_only"` in their meta and `compare.load_runs` skips them.
+- The availability of the previous price is a domain assumption (the parties know the current price); it does not exist for new contracts. The plausibility rule (hard cap, ratio bounds) flags rows for this study only; no row is removed from the main dataset.

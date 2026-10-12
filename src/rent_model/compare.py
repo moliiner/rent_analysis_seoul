@@ -131,6 +131,8 @@ def load_runs(metrics_dir=None):
         if track not in config.TRACKS or model_id.endswith('_conformal'):      # a `_conformal` run holds the intervals of a model that is already listed
             continue
         run = json.loads(path.read_text(encoding='utf-8'))[-1]
+        if run.get('meta', {}).get('scope') == 'renewal_only':      # separate product (notebook 13): never part of the main leaderboard
+            continue
         kind, can = extrapolation_kind(model_id)
         behaviour = behaviours.setdefault(track, load_behaviour(track, metrics_dir)).get(model_id, 'not evaluated')
         rows.append({'track': track, 'model_id': model_id, 'family': family_of(model_id),

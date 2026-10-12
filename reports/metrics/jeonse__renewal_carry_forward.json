@@ -1,0 +1,37 @@
+[
+  {
+    "track": "jeonse",
+    "model_id": "renewal_carry_forward",
+    "run_at": "2026-10-12T11:22:30+00:00",
+    "random_seed": 42,
+    "n": 15102,
+    "wape_pct": 6.181319583074588,
+    "mae": 2928.511389219971,
+    "mdape_pct": 4.761904761904762,
+    "median_bias_pct": -4.7579775285041785,
+    "aggregate_bias_pct": -5.672634297601561,
+    "rmse_log": 0.15779384187949339,
+    "r2_log": 0.9480117749471831,
+    "mape_dq_cells": 100,
+    "mape_dq_median_pct": 5.748422219523051,
+    "mape_dq_max_pct": 21.44563162450042,
+    "meta": {
+      "scope": "renewal_only",
+      "product": "what will a tenant pay on a future renewal, given the current price",
+      "uses": "previous_deposit_10k_krw",
+      "not_for": "new contracts and the market projection",
+      "evaluation_rows": "renewals with a positive previous price not above the hard cap, TEST 2025",
+      "hard_cap": 1000000.0,
+      "ratio_bounds": [
+        0.2,
+        5.0
+      ],
+      "training_rows": "renewals passing all plausibility rules, fit window before 2025-01-01",
+      "params": null,
+      "pseudo_test_wape": {
+        "2023": 11.682340162935255,
+        "2024": 7.981647526048986
+      }
+    }
+  }
+]

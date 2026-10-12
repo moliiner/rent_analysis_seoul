@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs the test suite and then every modeling notebook in order (00 .. 08, 10, 11, 12, 09).
+# Runs the test suite and then every modeling notebook in order (00 .. 08, 10, 11, 12, 09, 13).
 # Usage:  bash scripts/run_all.sh            run everything
 #         DRY_RUN=1 bash scripts/run_all.sh  only print the commands
 # Notebooks 10, 11 and 12 run before 09: they write the pseudo-test selections and the median-loss / neighbourhood-aware runs that 09 reads (11 takes hours).
@@ -25,6 +25,7 @@ NOTEBOOKS=(
   notebooks/11_neighbourhood_trend_models.ipynb
   notebooks/12_uncertainty.ipynb
   notebooks/09_model_comparison_projection.ipynb
+  notebooks/13_renewal_study.ipynb
 )
 
 run() {

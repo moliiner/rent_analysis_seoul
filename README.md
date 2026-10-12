@@ -158,6 +158,24 @@ For example, the 2026 base for an Apartment of 60 m2 in Gangnam-gu is 772.2 mill
 
 **Contract-level interval next to the index band.** The low/high scenarios above describe the uncertainty of the price level only. Notebook 09 adds the conformal interval of a single contract (calibration window 2025-07-01 to 2025-12-01) and an assumptions table; for the 60 m2 apartment in Gangnam-gu the Jeonse base of 2026 is 77,221.7735, the index band 71,759.4521 to 83,141.4203 and the 80% interval of one contract 60,656.1125 to 98,311.5719. The two bands are not added and neither is a forecast interval.
 
+## Renewal-only study (separate product)
+
+This section is a **separate product** and is not part of the market models, the leaderboard or the 2026-2028 projection. The question is *what will a tenant pay on a future renewal, given the current price?* It uses the previous price (`previous_deposit_10k_krw` for Jeonse, `previous_monthly_rent_10k_krw` for Wolse), which the modeling protocol forbids for the main models: it is an explicit, isolated exception documented in `CLAUDE.md`, the previous price never enters the main feature lists (tests check it) and the runs carry `scope = "renewal_only"` and are skipped by the main leaderboard (`notebooks/13_renewal_study.ipynb`, `src/rent_model/renewal.py`).
+
+- **It does not apply to new contracts**, which have no previous price, and **the availability of the previous price at prediction time is a domain assumption** (for a future renewal the parties know the current price). The data has no date for the previous contract, so the order of dates is checked only indirectly (the contract month is normally before the lease start).
+- **Data.** Renewals are 39.8128% (Jeonse) and 21.1347% (Wolse) of the 2025 TEST rows. A plausibility rule flags 569 Jeonse renewals and 5,582 Wolse renewals for this study only (nothing is removed from the main dataset): a hard cap on the previous price (413 and 230 renewals above it), a ratio of new to previous price outside 0.2 to 5 (566 and 387; used on training rows only) and a missing previous price. In Wolse 5,194 renewals have no previous monthly rent because the previous contract had none, and they are outside this product.
+- **Policy.** In Jeonse 0.9859 of the renewals with the renewal right used have a new / previous ratio at or below 1.05 (0.6245 without it), consistent with a 5% limit; the data do not show such a limit for the Wolse monthly rent (0.4608 at or below 1.05 with the right used).
+- **Models** (fit window only; settings tuned inside each window; evaluated on the pseudo-tests and once on 2025): carry-forward, previous price x median ratio of the group, and gradient boosting with median loss on the log ratio. WAPE on the 2025 renewals with a usable previous price:
+
+| Model | Jeonse WAPE % | Wolse WAPE % |
+|---|---:|---:|
+| Carry-forward (new = previous) | 6.18 | 10.59 |
+| Previous price x median ratio of the group | 3.58 | 8.46 |
+| Gradient boosting, median loss on the log ratio | 4.14 | 8.40 |
+| Main winner on the same rows (does not know the previous price) | 13.73 | 44.35 |
+
+The gain over the carry-forward is clear on 2025 but not in every pseudo-test window (in Jeonse 2023 the carry-forward is the best of the three with 11.6823% against 14.7378% and 14.9362%). The comparison with the main winner measures the value of knowing the current price, not modeling quality.
+
 ## Limitations and what I would do differently
 
 - **Only 48 months of data.** Trends and seasonality are barely identifiable; the 12-month index forecast errors rest on a handful of overlapping origins, and the 2026-2028 results are extrapolations whose bands are wide, in particular for Wolse.
@@ -176,8 +194,8 @@ For example, the 2026 base for an Apartment of 60 m2 in Gangnam-gu is 772.2 mill
 
 - **Environment:** Python 3.13.7; packages in `requirements.txt` (`pip install -r requirements.txt`). LightGBM and SHAP are not used; scikit-learn is the only boosting implementation.
 - **Random seed:** `RANDOM_SEED = 42`, defined only in `src/rent_model/config.py`.
-- **Tests:** `pytest -q` (183 tests: data cleaning, splits, leakage, metrics and every model module).
-- **Run everything (tests and notebooks 00 to 08, 10, 11, 12 and 09, in that order):** `bash scripts/run_all.sh` (or `make all`). Each notebook can also be run with `python -m nbconvert --to notebook --execute --inplace notebooks/<name>.ipynb`. The notebooks must run in that order: later ones read the runs saved by earlier ones (notebook 10 writes the median-loss runs, notebook 11 the neighbourhood-aware runs and `pseudotest_v2_*.json` that notebooks 12 and 09 read, notebook 12 the `_conformal` runs that notebook 09 reads; notebook 11 runs for hours, each of its twelve tunings takes between 529 and 963 seconds). Re-running a notebook appends a new run to `reports/metrics/{track}__{model_id}.json`; every table reads the last run. `reports/predictions/` (parquet) is generated by the notebooks and not versioned.
+- **Tests:** `pytest -q` (191 tests: data cleaning, splits, leakage, metrics and every model module).
+- **Run everything (tests and notebooks 00 to 08, 10, 11, 12, 09 and 13, in that order):** `bash scripts/run_all.sh` (or `make all`). Each notebook can also be run with `python -m nbconvert --to notebook --execute --inplace notebooks/<name>.ipynb`. The notebooks must run in that order: later ones read the runs saved by earlier ones (notebook 10 writes the median-loss runs, notebook 11 the neighbourhood-aware runs and `pseudotest_v2_*.json` that notebooks 12 and 09 read, notebook 12 the `_conformal` runs that notebook 09 reads; notebook 11 runs for hours, each of its twelve tunings takes between 529 and 963 seconds). Re-running a notebook appends a new run to `reports/metrics/{track}__{model_id}.json`; every table reads the last run. `reports/predictions/` (parquet) is generated by the notebooks and not versioned.
 - **Optional app:** `pip install streamlit` and `streamlit run app/streamlit_app.py` to choose a district, building type and area and see the scenarios (it refits the chosen models locally, about a minute the first time; no network needed).
 - **CI:** `.github/workflows/ci.yml` installs the requirements and runs `pytest -q` only.
 
@@ -198,11 +216,12 @@ notebooks/
   08_hybrid_model.ipynb        structure model + forecasted index
   10_selection_robustness.ipynb   pseudo-tests, block bootstrap, median-loss runs, bias by year
   12_uncertainty.ipynb         split conformal intervals of the chosen models, coverage by group and under shift
+  13_renewal_study.ipynb       renewal-only study (separate product, uses the previous price)
   11_neighbourhood_trend_models.ipynb   grouped neighbourhood, tuning per window, recalibration, learning curve, repeat units, price tiers
   09_model_comparison_projection.ipynb   leaderboard, selection, 2026-2028 scenarios
 src/rent_model/                config, data, features, splits, metrics, io, baselines, linear,
                                forest, boosting, clustering, unsupervised, ts_index, hybrid,
-                               recipes, pseudotest, diagnostics, conformal, compare, projection
+                               recipes, pseudotest, diagnostics, conformal, renewal (separate product), compare, projection
 tests/                         pytest suite
 reports/metrics/               one JSON per model and track, ts_index_*.json, pseudotest_*.json, pseudotest_v2_*.json, leaderboard.csv
 reports/figures/               PNG charts
