@@ -1,7 +1,58 @@
+# ---------------------------------------------------------------
+# Generated results that are rebuilt by the notebooks
+# ---------------------------------------------------------------
 reports/predictions/
+
+# ---------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------
 __pycache__/
-.ipynb_checkpoints/
+*.py[cod]
+*.egg-info/
+build/
+dist/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual environments
 .venv/
+venv/
+env/
+
+# ---------------------------------------------------------------
+# Secrets and credentials (never commit these)
+# ---------------------------------------------------------------
+.env
+.env.*
+*.pem
+*.key
+credentials*.json
+.streamlit/secrets.toml
+
+# ---------------------------------------------------------------
+# Editor, operating system and local tooling files
+# ---------------------------------------------------------------
 .idea/
+.vscode/
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# AI assistant configuration and local agent files (not part of the project)
+.claude/
+.agents/
+skills-lock.json
+
+# ---------------------------------------------------------------
+# Scratch space and logs
+# ---------------------------------------------------------------
+*.log
+*.tmp
+scratch/
+tmp/

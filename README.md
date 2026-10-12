@@ -2,6 +2,7 @@
 
 End-to-end data science project on 387,326 cleaned Seoul rental contracts (2022-2025): leakage-safe EDA and modeling of **Jeonse** (deposit-only) and **Wolse** (monthly rent) contracts, 42 valid models compared per track (baselines, linear, forests, boosting, K-Means, hierarchical clustering, Gaussian mixtures, time series and a hybrid), a quality-adjusted price index, and clearly labelled 2026-2028 extrapolation scenarios.
 
+Full documentation for readers without background in the project, Korean housing or machine learning: [docs/PROJECT_DOCUMENTATION.md](docs/PROJECT_DOCUMENTATION.md).
 > **How much will a tenant pay in Seoul?** It depends on the contract type. The chosen models predict the deposit of a Jeonse contract (2025 WAPE 14.14%) and the monthly rent of a Wolse contract (2025 WAPE 40.80%); the annual cost of a Wolse contract is 12 x the monthly rent. Units are 10,000 KRW (1,000 = 10 million KRW).
 >
 > **Worked example (Jeonse, extrapolation scenario for 2026, not a forecast):** a 60 m2 apartment in Gangnam-gu has a base deposit of 77,221.8 (10,000 KRW), about 772.2 million KRW, within an index band of 71,759.5 to 83,141.4; a single contract of that profile has an 80% interval of 60,656.1 to 98,311.6 (10,000 KRW).
